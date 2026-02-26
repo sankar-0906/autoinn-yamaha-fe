@@ -1,0 +1,77 @@
+.pageContainer {
+    padding: 24px;
+    background: #f5f7fa;
+    min-height: calc(100vh - 64px);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.searchInput {
+    width: 280px;
+    border-radius: 8px;
+}
+
+.addBtn {
+    background: #1a8a7a;
+    border-color: #1a8a7a;
+}
+
+.addBtn:hover,
+.addBtn:focus {
+    background: #156d61 !important;
+    border-color: #156d61 !important;
+}
+
+.modifyLink {
+    color: #1a8a7a;
+}
+
+.tableContainer {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.frameTable :global(.ant-table-thead > tr > th) {
+    background: #607d8b !important;
+    color: white !important;
+    font-weight: 500;
+}
+
+.frameTable :global(.ant-table-tbody > tr:nth-child(even)) {
+    background: #fcfcfc;
+}
+
+.frameTable :global(.ant-table-row:hover) {
+    cursor: pointer;
+}
+
+.modifyLink {
+    color: #1a8a7a;
+}
+
+.deleteLink {
+    color: #f44336 !important;
+}
+
+/* Modal Styles */
+.modalHeader {
+    border-bottom: 1px solid #f0f2f5;
+    margin: -24px -24px 24px;
+    padding: 16px 24px;
+}
+
+.modalTitle {
+    margin: 0 !important;
+}
+
+.formLabel {
+    font-weight: 500;
+    color: #455a64;
+}

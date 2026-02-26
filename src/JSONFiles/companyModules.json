@@ -1,0 +1,44 @@
+{
+    "modules": [
+        {
+            "id": "COMPANYMASTER",
+            "key": "department",
+            "title": "Department"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "employee",
+            "title": "Employee"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "manufacturer",
+            "title": "Manufacturer"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "vehicle_master",
+            "title": "Vehicle Master"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "parts_master",
+            "title": "Parts Master"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "dealer_master",
+            "title": "Dealer Master"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "idgenerator",
+            "title": "ID Generator"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "frame_number",
+            "title": "Frame Number"
+        }
+    ]
+}

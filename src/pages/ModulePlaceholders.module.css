@@ -1,0 +1,18 @@
+.placeholderCard {
+  border: none;
+  margin: 2px;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.placeholderCard :global(.ant-card-body) {
+  padding: 0 !important;
+}
+
+.title {
+  margin: 0 !important;
+}
+
+.description {
+  margin: 0 !important;
+}

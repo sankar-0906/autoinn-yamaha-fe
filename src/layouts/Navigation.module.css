@@ -1,0 +1,23 @@
+.navMenu {
+    border-right: none;
+}
+
+.navMenu :global(.ant-menu-item) {
+    height: 48px !important;
+    line-height: 48px !important;
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    border-radius: 8px !important;
+    width: calc(100% - 16px) !important;
+    margin-left: 8px !important;
+}
+
+.navMenu :global(.ant-menu-item-selected) {
+    background-color: transparent !important;
+    color: #1a8a7a !important;
+    font-weight: 600;
+}
+
+.navMenu :global(.ant-menu-item-selected) :global(.anticon) {
+    color: #1a8a7a !important;
+}

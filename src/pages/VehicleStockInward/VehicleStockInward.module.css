@@ -1,0 +1,39 @@
+.pageContainer {
+    padding: 24px;
+    background: #f0f2f5;
+    min-height: calc(100vh - 64px);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.tableContainer {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.importBtn {
+    background-color: #1a8a7a;
+    border-color: #1a8a7a;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.importBtn:hover {
+    background-color: #146d60 !important;
+    border-color: #146d60 !important;
+}
+
+.statusTag {
+    text-transform: capitalize;
+}

@@ -1,0 +1,127 @@
+.pageContainer {
+    padding: 24px;
+    background: #fff;
+    min-height: 100%;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.backBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #d9d9d9;
+    border-radius: 50%;
+    color: #000;
+    transition: all 0.3s;
+}
+
+.backBtn:hover {
+    border-color: #1890ff;
+    color: #1890ff;
+}
+
+.pageTitle {
+    margin-bottom: 0 !important;
+}
+
+.headerActions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.searchInput {
+    width: 300px;
+}
+
+.addBtn {
+    background: #1a8a7a;
+    border-color: #1a8a7a;
+}
+
+.addBtn:hover,
+.addBtn:focus {
+    background: #156d61 !important;
+    border-color: #156d61 !important;
+}
+
+.modifyLink {
+    color: #1a8a7a;
+}
+
+.employeeTable {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.employeeTable :global(.ant-table-thead > tr > th) {
+    background-color: #6c7a89;
+    color: #fff;
+    font-weight: 500;
+}
+
+.employeeRow {
+    cursor: pointer;
+}
+
+.employeeRowActive {
+    background-color: #fff !important;
+}
+
+.employeeRowInactive {
+    background-color: #f5f5f5 !important;
+}
+
+.branchTag {
+    background: #006d75;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+}
+
+.sectionTitle {
+    color: #000;
+    margin-bottom: 24px !important;
+}
+
+.modalTitle {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.employeeForm {
+    padding-top: 12px;
+}
+
+.tabIcon {
+    margin-right: 8px;
+}
+
+.profileAvatar {
+    background-color: #d9d9d9;
+    color: #fff;
+}
+
+.modifyLink {
+    color: #006d75;
+}
+
+.deleteLink {
+    color: #ff4d4f;
+}
+
+.activeTab {
+    color: #006d75 !important;
+}

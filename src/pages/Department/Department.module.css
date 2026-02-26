@@ -1,0 +1,77 @@
+.pageContainer {
+    padding: 24px;
+    background: #fff;
+    min-height: 100%;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.tableContainer {
+    background: #fff;
+    padding: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.addBtn {
+    background: #1a8a7a;
+    border-color: #1a8a7a;
+}
+
+.addBtn:hover,
+.addBtn:focus {
+    background: #156d61 !important;
+    border-color: #156d61 !important;
+}
+
+.modifyLink {
+    color: #1a8a7a;
+}
+
+.deleteLink {
+    color: #ff4d4f;
+}
+
+/* Modal Styles */
+.modalTitle {
+    background: #4f6c7c;
+    color: #fff;
+    padding: 12px 24px;
+    margin: -24px -24px 24px -24px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.roleAccessSection {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.roleTable :global(.ant-table-thead > tr > th) {
+    background: #768a96 !important;
+    color: #fff !important;
+}
+
+.accessLabel {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.accessLabel :global(.ant-checkbox-wrapper) {
+    margin-inline-start: 0;
+}
+
+.actionBtn {
+    padding: 0;
+}

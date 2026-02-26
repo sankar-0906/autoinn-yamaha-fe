@@ -1,0 +1,19 @@
+.dropdownContent {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.userName {
+    font-weight: 500;
+}
+
+.userRole {
+    font-size: 11px;
+    color: #8c8c8c;
+}
+
+.spaceTrigger {
+    cursor: pointer;
+    padding: 0 8px;
+}

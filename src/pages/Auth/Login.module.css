@@ -1,0 +1,39 @@
+.loginPage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f0f2f5;
+}
+
+.loginCard {
+    width: 420px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.logo {
+    width: 220px;
+    margin-bottom: 8px;
+}
+
+.title {
+    margin-bottom: 0 !important;
+}
+
+.submitBtn {
+    background: #1a8a7a;
+    border-color: #1a8a7a;
+    height: 42px;
+}
+
+.submitBtn:hover,
+.submitBtn:focus {
+    background: #156d61 !important;
+    border-color: #156d61 !important;
+}

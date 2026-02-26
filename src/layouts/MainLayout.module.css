@@ -1,0 +1,65 @@
+.mainLayout {
+    height: 100vh;
+    overflow: hidden;
+    width: 100%;
+    min-width: 0;
+}
+
+.innerLayout {
+    height: 100vh;
+    overflow-x: hidden;
+    width: 100%;
+    min-width: 0;
+}
+
+.sidebar {
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid #f0f0f0;
+}
+
+.layoutHeader {
+    padding: 0;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 24px;
+}
+
+.logoContainer {
+    height: 100px;
+    /* was 64px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    overflow: hidden;
+}
+
+.logoContainer img {
+    height: 50px;
+    /* increase this value */
+    width: 200px;
+    /* maintain aspect ratio */
+    transition: all 0.2s;
+}
+
+.logo {
+    height: 32px;
+    object-fit: contain;
+}
+
+.layoutContent {
+    flex: 1;
+    margin: 16px;
+    padding: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #fff;
+    min-width: 0;
+}
+
+.layoutFooter {
+    text-align: center;
+}

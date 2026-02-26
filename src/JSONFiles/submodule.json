@@ -1,0 +1,81 @@
+{
+  "submodules": [
+    {
+      "id": "COMPANYMASTER",
+      "key": "company",
+      "title": "Company"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "company_settings",
+      "title": "Company Settings"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "department",
+      "title": "Department"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "employee",
+      "title": "Employee"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "manufacturer",
+      "title": "Manufacturer"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "vehicle_master",
+      "title": "Vehicle Master"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "parts_master",
+      "title": "Parts Master"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "dealer_master",
+      "title": "Dealer Master"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "idgenerator",
+      "title": "ID Generator"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "frame_number",
+      "title": "Frame Number"
+    },
+    {
+      "id": "TRANSACTIONMASTER",
+      "key": "Vehicle Stock Inward",
+      "title": "Vehicle Stock Inward"
+    }
+  ],
+  "modules": [
+    {
+      "key": "COMPANYMASTER",
+      "title": "Company Master"
+    },
+    {
+      "key": "TRANSACTIONMASTER",
+      "title": "Transaction Master"
+    }
+  ],
+  "hasId": [
+    {
+      "id": "COMPANYMASTER",
+      "key": "EMPLOYEE",
+      "title": "Employee"
+    },
+    {
+      "id": "TRANSACTIONMASTER",
+      "key": "Vehicle Stock Inward",
+      "title": "Vehicle Stock Inward"
+    }
+  ]
+}

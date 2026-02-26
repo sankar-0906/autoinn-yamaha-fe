@@ -1,0 +1,44 @@
+.pageContainer {
+    background: #fff;
+    min-height: 100%;
+}
+
+.tabsContainer {
+    padding: 0 24px;
+}
+
+.tabContent {
+    padding: 24px 0;
+}
+
+.tabsContainer :global(.ant-tabs-tab .anticon) {
+    margin-right: 8px;
+    font-size: 16px;
+    vertical-align: middle;
+}
+
+.formContainer {
+    max-width: 800px;
+}
+
+.saveBtn {
+    background: #1a8a7a;
+    border-color: #1a8a7a;
+}
+
+.saveBtn:hover,
+.saveBtn:focus {
+    background: #156d61 !important;
+    border-color: #156d61 !important;
+}
+
+.masterCard {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.masterIcon {
+    font-size: 48px;
+    color: #1a8a7a;
+    margin-bottom: 12px;
+}

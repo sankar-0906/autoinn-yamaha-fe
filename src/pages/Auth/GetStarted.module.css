@@ -1,0 +1,182 @@
+.getStartedPage {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    padding: 40px 20px;
+    font-family: 'Inter', sans-serif;
+}
+
+.wizardContainer {
+    width: 100%;
+    max-width: 900px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 48px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    color: white;
+}
+
+.stepsWrapper {
+    margin-bottom: 48px;
+}
+
+:global(.ant-steps .ant-steps-item-title) {
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+
+:global(.ant-steps .ant-steps-item-active .ant-steps-item-title) {
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+:global(.ant-steps .ant-steps-item-finish .ant-steps-item-title) {
+    color: #4ade80 !important;
+}
+
+:global(.ant-steps .ant-steps-item-icon) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+:global(.ant-steps .ant-steps-item-active .ant-steps-item-icon) {
+    background: #1a8a7a !important;
+    border-color: #1a8a7a !important;
+}
+
+:global(.ant-steps .ant-steps-item-finish .ant-steps-item-icon) {
+    background: transparent !important;
+    border-color: #4ade80 !important;
+}
+
+:global(.ant-steps .ant-steps-item-finish .ant-steps-item-icon .ant-steps-icon) {
+    color: #4ade80 !important;
+}
+
+.stepContent {
+    min-height: 400px;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stepTitle {
+    color: white !important;
+    margin-bottom: 8px !important;
+    font-weight: 700 !important;
+}
+
+.stepDescription {
+    color: rgba(255, 255, 255, 0.6) !important;
+    display: block;
+    margin-bottom: 32px;
+}
+
+/* Form Styles Scoped to Wizard */
+.getStartedPage :global(.ant-form-item-label > label) {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.getStartedPage :global(.ant-input),
+.getStartedPage :global(.ant-input-password),
+.getStartedPage :global(.ant-select-selector),
+.getStartedPage :global(.ant-picker) {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border-radius: 8px !important;
+}
+
+.getStartedPage :global(.ant-input::placeholder) {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.getStartedPage :global(.ant-input:focus),
+.getStartedPage :global(.ant-input-focused) {
+    border-color: #1a8a7a !important;
+    box-shadow: 0 0 0 2px rgba(26, 138, 122, 0.2) !important;
+}
+
+.primaryBtn {
+    background: #1a8a7a !important;
+    border: none !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    padding: 0 32px !important;
+    box-shadow: 0 10px 15px -3px rgba(26, 138, 122, 0.3) !important;
+}
+
+.primaryBtn:hover {
+    background: #157366 !important;
+    transform: translateY(-1px);
+}
+
+.secondaryBtn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+}
+
+.footer {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.branchTable {
+    background: transparent !important;
+    margin-top: 16px;
+}
+
+.getStartedPage :global(.ant-table) {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.getStartedPage :global(.ant-table-thead > tr > th) {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.getStartedPage :global(.ant-table-tbody > tr > td) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.getStartedPage :global(.ant-table-row:hover > td) {
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.roleAccessSection {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 24px;
+}
+
+.adminCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 32px;
+}
