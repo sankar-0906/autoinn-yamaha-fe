@@ -1,0 +1,52 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          set -ex
+          echo "📦 Installing dependencies..."
+          npm ci
+
+      - name: Build project (Production)
+        env:
+          NODE_ENV: production
+        run: |
+          set -ex
+          echo "🏗️ Starting production build..."
+          npm run build
+          echo "✅ Build completed successfully!"
+
+      - name: Deploy to DigitalOcean
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DO_SSH_KEY }}
+          ARGS: "-rlgoDzvc -i --delete"
+          SOURCE: "dist/"
+          REMOTE_HOST: ${{ secrets.DO_HOST }}
+          REMOTE_USER: ${{ secrets.DO_USERNAME }}
+          REMOTE_PORT: ${{ secrets.DO_PORT }}
+          TARGET: "/var/www/frontend"
+          EXCLUDE: "/node_modules/"
+        with:
+          args: |
+            echo "🚀 Deploying to DigitalOcean server..."
+            rsync $ARGS $SOURCE $REMOTE_USER@$REMOTE_HOST:$TARGET
+            echo "🎉 Deployment completed successfully!"
