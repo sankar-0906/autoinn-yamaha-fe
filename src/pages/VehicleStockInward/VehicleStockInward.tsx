@@ -1,24 +1,30 @@
 import {
-    Table, Button, Input, Space, Typography, message
+    Table, Button, Input, Space, Typography, message, Modal, Tooltip
 } from 'antd';
 import { useState, useEffect } from 'react';
 import {
     SearchOutlined,
     LeftOutlined,
     UploadOutlined,
-    EyeOutlined
+    EyeOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    ExclamationCircleOutlined
 } from '@ant-design/icons';
-import { getVehicleStockInwards } from '../../api/vehicleStockInward';
+import { getVehicleStockInwards, deleteVehicleStockInward } from '../../api/vehicleStockInward';
 import InwardImportModal from './components/InwardImportModal';
 import styles from './VehicleStockInward.module.css';
 
 const { Title } = Typography;
+const { confirm } = Modal;
 
 const VehicleStockInwardPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [searchText, setSearchText] = useState('');
-    const [importModalVisible, setImportModalVisible] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalMode, setModalMode] = useState<'import' | 'view' | 'edit'>('import');
+    const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -37,6 +43,40 @@ const VehicleStockInwardPage: React.FC = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const handleDelete = (id: string) => {
+        confirm({
+            title: 'Are you sure you want to delete this record?',
+            icon: <ExclamationCircleOutlined />,
+            content: 'This action cannot be undone and will remove all associated vehicle labels.',
+            okText: 'Yes, Delete',
+            okType: 'danger',
+            cancelText: 'No',
+            onOk: async () => {
+                try {
+                    const res = await deleteVehicleStockInward(id);
+                    if (res.data.success) {
+                        message.success('Record deleted successfully');
+                        fetchData();
+                    }
+                } catch (err) {
+                    message.error('Failed to delete record');
+                }
+            },
+        });
+    };
+
+    const handleAction = (mode: 'view' | 'edit', record: any) => {
+        setModalMode(mode);
+        setSelectedRecord(record);
+        setModalVisible(true);
+    };
+
+    const handleImportClick = () => {
+        setModalMode('import');
+        setSelectedRecord(null);
+        setModalVisible(true);
+    };
 
     const columns = [
         {
@@ -74,11 +114,29 @@ const VehicleStockInwardPage: React.FC = () => {
             title: 'Action',
             key: 'action',
             render: (_: any, record: any) => (
-                <Button
-                    icon={<EyeOutlined />}
-                    type="text"
-                    onClick={() => message.info('View details coming soon')}
-                />
+                <Space>
+                    <Tooltip title="View Details">
+                        <Button
+                            icon={<EyeOutlined />}
+                            type="text"
+                            onClick={() => handleAction('view', record)}
+                        />
+                    </Tooltip>
+                    <Tooltip title="Edit Record">
+                        <Button
+                            icon={<EditOutlined style={{ color: '#1a8a7a' }} />}
+                            type="text"
+                            onClick={() => handleAction('edit', record)}
+                        />
+                    </Tooltip>
+                    <Tooltip title="Delete Record">
+                        <Button
+                            icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />}
+                            type="text"
+                            onClick={() => handleDelete(record.id)}
+                        />
+                    </Tooltip>
+                </Space>
             ),
         },
     ];
@@ -99,7 +157,7 @@ const VehicleStockInwardPage: React.FC = () => {
                         onClick={() => window.history.back()}
                     />
                     <Title level={4} style={{ margin: 0 }}>
-                        Vehicle Stock Inward [{data.length}]
+                        Vehicle Stock Inward [{loading ? '...' : filteredData.length}]
                     </Title>
                 </Space>
                 <Space>
@@ -113,7 +171,7 @@ const VehicleStockInwardPage: React.FC = () => {
                     <Button
                         type="primary"
                         icon={<UploadOutlined />}
-                        onClick={() => setImportModalVisible(true)}
+                        onClick={handleImportClick}
                         className={styles.importBtn}
                     >
                         Import Inward Record
@@ -132,10 +190,12 @@ const VehicleStockInwardPage: React.FC = () => {
             </div>
 
             <InwardImportModal
-                open={importModalVisible}
-                onClose={() => setImportModalVisible(false)}
+                open={modalVisible}
+                mode={modalMode}
+                initialData={selectedRecord}
+                onClose={() => setModalVisible(false)}
                 onSuccess={() => {
-                    setImportModalVisible(false);
+                    setModalVisible(false);
                     fetchData();
                 }}
             />
