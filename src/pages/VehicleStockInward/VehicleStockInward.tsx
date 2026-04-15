@@ -67,6 +67,16 @@ const VehicleStockInwardPage: React.FC = () => {
     };
 
     const handleAction = (mode: 'view' | 'edit', record: any) => {
+        // DEBUG: Log the record data when clicking View/Edit
+        console.log('=== DEBUG: View/Edit Button Clicked ===');
+        console.log('Mode:', mode);
+        console.log('Complete Record:', record);
+        console.log('Record ID:', record.id);
+        console.log('Record items:', record.items);
+        console.log('Record VEHICLES:', record.VEHICLES);
+        console.log('Record lineItems:', record.lineItems);
+        console.log('=== END DEBUG ===');
+        
         setModalMode(mode);
         setSelectedRecord(record);
         setModalVisible(true);

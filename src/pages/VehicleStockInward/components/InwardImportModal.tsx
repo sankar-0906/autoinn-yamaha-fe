@@ -18,6 +18,7 @@ interface InwardImportModalProps {
     initialData?: any;
 }
 
+
 const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, onSuccess, mode = 'import', initialData }) => {
     const [loading, setLoading] = useState(false);
     const [extractedData, setExtractedData] = useState<any>(null);
@@ -32,18 +33,142 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
     const isEditMode = mode === 'edit';
 
     React.useEffect(() => {
-        if (open) {
-            if (initialData) {
-                setExtractedData({ "VEHICLES": initialData.items || [] });
+        const processInitialData = async () => {
+            if (open && initialData) {
+                // DEBUG: Log the complete initialData structure
+                console.log('=== DEBUG: View/Edit Mode Initial Data ===');
+                console.log('Mode:', mode);
+                console.log('Complete initialData:', initialData);
+                console.log('initialData.items:', initialData.items);
+                console.log('initialData.VEHICLES:', initialData.VEHICLES);
+                console.log('initialData.lineItems:', initialData.lineItems);
+                
+                // Check for both legacy items and new VEHICLES array
+                let vehiclesData = [];
+                if (initialData.VEHICLES && Array.isArray(initialData.VEHICLES) && initialData.VEHICLES.length > 0) {
+                    vehiclesData = initialData.VEHICLES;
+                    console.log('Using VEHICLES array (new hierarchical format)');
+                } else if (initialData.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
+                    // Transform legacy items with dynamic data recovery from API
+                    console.log('Using items array (legacy format) - calling recovery API...');
+                    
+                    // Call the dynamic recovery API
+                    try {
+                        const recoveryResponse = await fetch('/api/vehicle-stock-inward/recover-data', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                vehicles: initialData.items
+                            })
+                        });
+                        
+                        if (recoveryResponse.ok) {
+                            const recoveryResult = await recoveryResponse.json();
+                            if (recoveryResult.success) {
+                                vehiclesData = recoveryResult.data;
+                                console.log('Dynamic recovery successful:', recoveryResult.data);
+                            } else {
+                                console.error('Dynamic recovery failed:', recoveryResult.message);
+                                // Fallback to basic transformation
+                                vehiclesData = initialData.items.map((item: any) => ({
+                                    ...item,
+                                    modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
+                                    qty: 1,
+                                    colorCode: item.image?.code || 'UNKNOWN'
+                                }));
+                            }
+                        } else {
+                            console.error('Recovery API error:', recoveryResponse.statusText);
+                            // Fallback to basic transformation
+                            vehiclesData = initialData.items.map((item: any) => ({
+                                ...item,
+                                modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
+                                qty: 1,
+                                colorCode: item.image?.code || 'UNKNOWN'
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Error calling recovery API:', error);
+                        // Fallback to basic transformation
+                        vehiclesData = initialData.items.map((item: any) => ({
+                            ...item,
+                            modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
+                            qty: 1,
+                            colorCode: item.image?.code || 'UNKNOWN'
+                        }));
+                    }
+                    
+                    console.log('Using items array (legacy format) - transformed with dynamic recovery');
+                } else {
+                    console.log('No vehicle data found!');
+                }
+                
+                // Group vehicles by model code to calculate proper quantities (works for both formats)
+                const groupedVehicles = vehiclesData.reduce((groups: any, vehicle: any) => {
+                    const modelCode = vehicle.modelCode;
+                    if (!groups[modelCode]) {
+                        groups[modelCode] = {
+                            modelCode,
+                            qty: 0,
+                            vehicles: []
+                        };
+                    }
+                    groups[modelCode].qty += 1;
+                    groups[modelCode].vehicles.push(vehicle);
+                    return groups;
+                }, {});
+                
+                // Convert back to flat array with correct quantities
+                const finalVehiclesData = Object.values(groupedVehicles).flatMap((group: any) => 
+                    group.vehicles.map((vehicle: any) => ({
+                        ...vehicle,
+                        qty: group.qty // Set the same quantity for all vehicles in the group
+                    }))
+                );
+                
+                console.log('=== DEBUG: Quantity Grouping ===');
+                Object.values(groupedVehicles).forEach((group: any) => {
+                    console.log(`Model ${group.modelCode}: ${group.qty} vehicles`);
+                });
+                console.log('=== END GROUPING DEBUG ===');
+                
+                console.log('Final vehiclesData:', finalVehiclesData);
+                console.log('=== DEBUG: Vehicle Data Details ===');
+                finalVehiclesData.forEach((vehicle: any, index: number) => {
+                    console.log(`Vehicle ${index + 1}:`);
+                    console.log(`  ID: ${vehicle.id}`);
+                    console.log(`  Model Code: ${vehicle.modelCode || 'MISSING'}`);
+                    console.log(`  Qty: ${vehicle.qty || 'MISSING'}`);
+                    console.log(`  Chassis No: ${vehicle.chassisNo || 'MISSING'}`);
+                    console.log(`  Engine No: ${vehicle.engineNo || 'MISSING'}`);
+                    console.log(`  Color: ${vehicle.colorCode || 'MISSING'}`);
+                    console.log(`  vehicleMasterId: ${vehicle.vehicleMasterId || 'NULL'}`);
+                    console.log(`  imageId: ${vehicle.imageId || 'NULL'}`);
+                    console.log(`  vehicleMaster:`, vehicle.vehicleMaster);
+                    console.log(`  image:`, vehicle.image);
+                    console.log(`---`);
+                });
+                
+                vehiclesData = finalVehiclesData;
+                console.log('=== END DEBUG ===');
+                
+                setExtractedData({ "VEHICLES": vehiclesData });
                 form.setFieldsValue({
                     ...initialData,
                     date: initialData.date ? dayjs(initialData.date) : null,
                     daDate: initialData.daDate ? dayjs(initialData.daDate) : null,
                 });
             } else {
+                console.log('=== DEBUG: No initialData (Import Mode) ===');
                 setExtractedData(null);
                 form.resetFields();
             }
+        };
+
+        if (open) {
+            processInitialData();
         }
     }, [open, initialData, form]);
 
@@ -145,6 +270,16 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
         dataIndex,
         key: dataIndex,
         render: (_: any, record: any, rowIndex: number) => {
+            // DEBUG: Log what data is being rendered in the table
+            if (dataIndex === 'modelCode' || dataIndex === 'qty' || dataIndex === 'chassisNo' || dataIndex === 'engineNo' || dataIndex === 'colorCode') {
+                console.log(`=== DEBUG: Table Render ===`);
+                console.log(`Column: ${title} (${dataIndex})`);
+                console.log(`Row: ${rowIndex}`);
+                console.log(`Record:`, record);
+                console.log(`Value for ${dataIndex}:`, record[dataIndex]);
+                console.log(`=== END RENDER DEBUG ===`);
+            }
+            
             const isEditing =
                 editingCell?.rowIndex === rowIndex &&
                 editingCell?.dataIndex === dataIndex;
