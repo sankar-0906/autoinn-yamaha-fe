@@ -22,6 +22,10 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
     const [loading, setLoading] = useState(false);
     const [extractedData, setExtractedData] = useState<any>(null);
     const [processingStep, setProcessingStep] = useState<string>('');
+    const [editingCell, setEditingCell] = useState<{
+        rowIndex: number;
+        dataIndex: string;
+    } | null>(null);
     const [form] = Form.useForm();
 
     const isViewOnly = mode === 'view';
@@ -123,12 +127,60 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
         }
     };
 
+    const handleCellChange = (value: string, rowIndex: number, dataIndex: string) => {
+        const updated = [...extractedData["VEHICLES"]];
+        updated[rowIndex] = {
+            ...updated[rowIndex],
+            [dataIndex]: value
+        };
+
+        setExtractedData({
+            ...extractedData,
+            VEHICLES: updated
+        });
+    };
+
+    const getEditableColumn = (title: string, dataIndex: string) => ({
+        title,
+        dataIndex,
+        key: dataIndex,
+        render: (_: any, record: any, rowIndex: number) => {
+            const isEditing =
+                editingCell?.rowIndex === rowIndex &&
+                editingCell?.dataIndex === dataIndex;
+
+            return isEditing ? (
+                <Input
+                    autoFocus
+                    defaultValue={record[dataIndex]}
+                    onBlur={(e) => {
+                        handleCellChange(e.target.value, rowIndex, dataIndex);
+                        setEditingCell(null);
+                    }}
+                    onPressEnter={(e) => {
+                        handleCellChange((e.target as any).value, rowIndex, dataIndex);
+                        setEditingCell(null);
+                    }}
+                />
+            ) : (
+                <div
+                    onDoubleClick={() =>
+                        setEditingCell({ rowIndex, dataIndex })
+                    }
+                    style={{ cursor: 'pointer', padding: '4px 8px', minHeight: '22px' }}
+                >
+                    {record[dataIndex] || ''}
+                </div>
+            );
+        }
+    });
+
     const vehicleColumns = [
-        { title: 'Model Code', dataIndex: 'modelCode', key: 'modelCode' },
-        { title: 'Qty', dataIndex: 'qty', key: 'qty' },
-        { title: 'Chassis No', dataIndex: 'chassisNo', key: 'chassisNo' },
-        { title: 'Engine No', dataIndex: 'engineNo', key: 'engineNo' },
-        { title: 'Color', dataIndex: 'colorCode', key: 'colorCode' },
+        getEditableColumn('Model Code', 'modelCode'),
+        getEditableColumn('Qty', 'qty'),
+        getEditableColumn('Chassis No', 'chassisNo'),
+        getEditableColumn('Engine No', 'engineNo'),
+        getEditableColumn('Color', 'colorCode'),
     ];
 
     const getModalTitle = () => {
@@ -245,6 +297,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                         pagination={false}
                         size="small"
                         rowKey={(record: any, index?: number) => `${record.chassisNo}-${index}`}
+                        scroll={{ x: true }}
                     />
                 </Form>
             )}
