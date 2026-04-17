@@ -39,6 +39,16 @@
             "id": "COMPANYMASTER",
             "key": "frame_number",
             "title": "Frame Number"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "supplier_master",
+            "title": "Supplier Master"
+        },
+        {
+            "id": "COMPANYMASTER",
+            "key": "hsn_code",
+            "title": "HSN Code"
         }
     ]
 }

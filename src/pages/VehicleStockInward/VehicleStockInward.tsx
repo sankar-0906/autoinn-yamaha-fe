@@ -91,8 +91,8 @@ const VehicleStockInwardPage: React.FC = () => {
     const columns = [
         {
             title: 'Inward No',
-            dataIndex: 'inwardNo',
             key: 'inwardNo',
+            render: (_: any, __: any, index: number) => index + 1,
         },
         {
             title: 'Invoice No',
@@ -108,7 +108,14 @@ const VehicleStockInwardPage: React.FC = () => {
             title: 'Date',
             dataIndex: 'date',
             key: 'date',
-            render: (date: string) => date ? new Date(date).toLocaleDateString() : '-',
+            render: (date: string) => {
+                if (!date) return '-';
+                const d = new Date(date);
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}-${month}-${year}`;
+            },
         },
         {
             title: 'DA Number',
@@ -118,7 +125,10 @@ const VehicleStockInwardPage: React.FC = () => {
         {
             title: 'Total Vehicles',
             key: 'totalVehicles',
-            render: (_, record: any) => record.items?.length || 0,
+            render: (_: any, record: any) => {
+                // Use the totalVehicles field from database, fallback to calculated value
+                return record.totalVehicles || record.VEHICLES?.length || 0;
+            },
         },
         {
             title: 'Action',

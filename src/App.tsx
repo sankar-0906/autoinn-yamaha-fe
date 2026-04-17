@@ -14,10 +14,12 @@ import DealerMasterPage from './pages/DealerMaster/DealerMaster';
 import IdGeneratorPage from './pages/IdGenerator/IdGenerator';
 import FrameNumberPage from './pages/FrameNumber/FrameNumber';
 import VehicleStockInwardPage from './pages/VehicleStockInward/VehicleStockInward';
+import SupplierMasterPage from './components/CompanyMasters/Company/SupplierMaster';
+import HSNCodePage from './components/CompanyMasters/Company/HSNCode';
+import BranchPage from './components/CompanyMasters/Company/Branch';
 
 import {
   Dashboard,
-  BranchesPage
 } from './pages/ModulePlaceholders';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -82,7 +84,7 @@ const App: React.FC = () => {
             <Route path="/company">
               <Route index element={<CompanySettings />} />
               <Route path="settings" element={<CompanySettings />} />
-              <Route path="branches" element={<BranchesPage />} />
+              <Route path="branch" element={<BranchPage />} />
               <Route path="department" element={<DepartmentPage />} />
               <Route path="employee" element={<EmployeePage />} />
               <Route path="manufacturer" element={<ManufacturerPage />} />
@@ -91,6 +93,8 @@ const App: React.FC = () => {
               <Route path="dealer_master" element={<DealerMasterPage />} />
               <Route path="idgenerator" element={<IdGeneratorPage />} />
               <Route path="frame_number" element={<FrameNumberPage />} />
+              <Route path="supplier_master" element={<SupplierMasterPage />} />
+              <Route path="hsn_code" element={<HSNCodePage />} />
               <Route path="vehicle-stock-inward" element={<VehicleStockInwardPage />} />
             </Route>
           </Route>

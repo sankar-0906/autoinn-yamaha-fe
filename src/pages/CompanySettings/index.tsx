@@ -11,7 +11,6 @@ import {
     BuildOutlined,
     NumberOutlined,
     FileTextOutlined,
-    MessageOutlined,
     ShopOutlined,
     DollarOutlined
 } from '@ant-design/icons';
@@ -19,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axiosInstance from '../../api/axiosInstance';
 import companyModules from '../../JSONFiles/companyModules.json';
+import BranchPage from '../../components/CompanyMasters/Company/Branch';
 
 import styles from './CompanySettings.module.css';
 
@@ -31,12 +31,13 @@ const iconMap: Record<string, React.ReactNode> = {
     vehicle_master: <CarOutlined />,
     parts_master: <BuildOutlined />,
     VehiclePrice: <TagOutlined />,
-    hsn: <NumberOutlined />,
+    hsn_code: <NumberOutlined />,
     sac: <FileTextOutlined />,
     financier: <DollarOutlined />,
     dealer_master: <ShopOutlined />,
     idgenerator: <SettingOutlined />,
     frame_number: <NumberOutlined />,
+    branch: <ShopOutlined />,
 };
 
 const CompanySettings: React.FC = () => {
@@ -107,7 +108,7 @@ const CompanySettings: React.FC = () => {
     return (
         <div className={styles.pageContainer}>
             <Tabs
-                defaultActiveKey="2"
+                defaultActiveKey="1"
                 className={styles.tabsContainer}
                 items={[
                     {
@@ -178,6 +179,20 @@ const CompanySettings: React.FC = () => {
                         key: '2',
                         label: (
                             <span>
+                                <ShopOutlined />
+                                Company Branch
+                            </span>
+                        ),
+                        children: (
+                            <div className={styles.tabContent}>
+                                <BranchPage />
+                            </div>
+                        ),
+                    },
+                    {
+                        key: '3',
+                        label: (
+                            <span>
                                 <SettingOutlined />
                                 Company Master
                             </span>
@@ -192,7 +207,7 @@ const CompanySettings: React.FC = () => {
                     },
                 ]}
             />
-        </div>
+        </div >
     );
 };
 

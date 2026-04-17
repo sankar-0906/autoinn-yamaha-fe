@@ -185,10 +185,14 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                 console.log("Extracted Data:", data);
                 setExtractedData(data);
 
-                // Helper to parse dates like "31-Jan-2026"
+                // Helper to parse dates like "31-Jan-2026" or "31-01-2026"
                 const parseDate = (d: string) => {
                     if (!d) return null;
-                    const parsed = dayjs(d, 'DD-MMM-YYYY');
+                    // Try DD-MM-YYYY format first
+                    let parsed = dayjs(d, 'DD-MM-YYYY');
+                    if (parsed.isValid()) return parsed;
+                    // Fallback to DD-MMM-YYYY format
+                    parsed = dayjs(d, 'DD-MMM-YYYY');
                     return parsed.isValid() ? parsed : dayjs(d);
                 };
 
@@ -245,7 +249,14 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                 form.resetFields();
             }
         } catch (err: any) {
-            message.error(err.response?.data?.message || 'Action failed');
+            const errorMessage = err.response?.data?.message || 'Action failed';
+            const isDuplicate = err.response?.data?.isDuplicate;
+            
+            if (isDuplicate) {
+                message.error('Inward record already exists');
+            } else {
+                message.error(errorMessage);
+            }
         } finally {
             setLoading(false);
             setProcessingStep('');
@@ -381,7 +392,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                             <Form.Item name="invoiceNo" label="Invoice No"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} /></Form.Item>
+                            <Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item>
                         </Col>
 
                         <Col span={12}>
@@ -398,7 +409,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                             <Form.Item name="daNumber" label="DA Number"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="daDate" label="DA Date"><DatePicker style={{ width: '100%' }} /></Form.Item>
+                            <Form.Item name="daDate" label="DA Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item>
                         </Col>
 
                         <Col span={8}>
