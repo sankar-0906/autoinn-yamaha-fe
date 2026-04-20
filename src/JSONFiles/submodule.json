@@ -51,6 +51,16 @@
       "title": "Frame Number"
     },
     {
+      "id": "COMPANYMASTER",
+      "key": "supplier_master",
+      "title": "Supplier Master"
+    },
+    {
+      "id": "COMPANYMASTER",
+      "key": "hsn_module",
+      "title": "HSN Module"
+    },
+    {
       "id": "TRANSACTIONMASTER",
       "key": "Vehicle Stock Inward",
       "title": "Vehicle Stock Inward"

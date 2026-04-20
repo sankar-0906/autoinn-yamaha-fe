@@ -30,7 +30,7 @@ const SupplierMasterTable = ({
       title: "Supplier Type",
       dataIndex: "supplierType",
       key: "type",
-      render: (text) => text.map((value) => <Tag color="blue" key={1}>{value}</Tag>),
+      render: (text) => text?.map((value, index) => <Tag color="blue" key={index}>{value}</Tag>),
     },
     {
       title: "Status",
@@ -42,7 +42,7 @@ const SupplierMasterTable = ({
       title: "City",
       dataIndex: "address",
       key: "city",
-      render: (text) => <span>{text && text.district.name}</span>,
+      render: (text) => <span>{text?.district?.name}</span>,
     },
     {
       title: "GST D.Type",

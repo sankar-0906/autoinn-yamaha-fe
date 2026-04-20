@@ -18,6 +18,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
     const [booleanCity, setBooleanCity] = useState(true);
     const [dataSource, setDataSource] = useState([]); // Autoinn-style contacts
     const [editPhone, setEditPhone] = useState(""); // Autoinn-style editing
+    const lastInitializedId = React.useRef('uninitialized');
 
     useEffect(() => {
         // Fetch Countries
@@ -25,11 +26,11 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             if (res.data.success) {
                 setCountries(res.data.data || []);
                 // Find India and set it as default, or use first country if India not found
-                const india = res.data.data?.find(country => 
+                const india = res.data.data?.find(country =>
                     country.name.toLowerCase().includes('india')
                 );
                 const defaultCountry = india || res.data.data?.[0];
-                
+
                 if (defaultCountry?.id) {
                     // Only set default if no existing value
                     const currentCountry = form.getFieldValue(['address', 'country']);
@@ -56,29 +57,29 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
     }, []);
 
     useEffect(() => {
-        // Autoinn-style: Set dataSource from contacts
-        if (data.contacts) {
-            setDataSource(data.contacts);
-        }
-        
-        if (data.address?.country) {
-            fetchStates(data.address.country);
-            setBooleanState(false);
-        }
-        if (data.address?.state) {
-            fetchCities(data.address.state);
-            setBooleanCity(false);
-        }
+        // Prevent initialization with completely empty initial unpopulated object
+        if (!data || Object.keys(data).length === 0) return;
 
-        // Autoinn-style: Only set form values if they don't already exist (preserve user input)
-        const currentFormValues = form.getFieldsValue();
-        
-        // Only set values if form is empty or if data has changed significantly
-        const shouldSetValues = !currentFormValues.name || 
-                              (data.name && data.name !== currentFormValues.name) ||
-                              (data.id && data.id !== currentFormValues.id);
-        
-        if (shouldSetValues) {
+        const currentDataId = data.id || 'new';
+
+        // Only run initialization when we're loading a new branch context
+        if (lastInitializedId.current !== currentDataId) {
+            lastInitializedId.current = currentDataId;
+
+            // Autoinn-style: Set dataSource from contacts
+            if (data.contacts) {
+                setDataSource(data.contacts);
+            }
+
+            if (data.address?.country) {
+                fetchStates(data.address.country);
+                setBooleanState(false);
+            }
+            if (data.address?.state) {
+                fetchCities(data.address.state);
+                setBooleanCity(false);
+            }
+
             const updateFormValue = (field, value) => {
                 const currentValue = form.getFieldValue(field);
                 if (value !== undefined && currentValue !== value) {
@@ -90,13 +91,14 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             updateFormValue('branchType', data.branchType);
             updateFormValue('email', data.email);
             updateFormValue('url', data.url);
+            updateFormValue('googleMapUrl', data.googleMapUrl);
             updateFormValue('lat', data.lat);
             updateFormValue('lon', data.lon);
             updateFormValue('noOfRamps', data.noOfRamps);
             updateFormValue('manufacturer', data.manufacturer);
             updateFormValue('personInCharge', data.personInCharge);
             updateFormValue('gst', data.gst);
-            
+
             // Set nested address fields - only if data exists
             if (data.address) {
                 updateFormValue(['address', 'line1'], data.address.line1);
@@ -126,7 +128,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                 // Autoinn-style: Only clear state if country changed
                 const currentCountry = form.getFieldValue(['address', 'country']);
                 const currentState = form.getFieldValue(['address', 'state']);
-                
+
                 if (currentCountry !== countryId) {
                     form.setFieldValue(['address', 'state'], undefined);
                     form.setFieldValue(['address', 'district'], undefined);
@@ -143,7 +145,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                 // Autoinn-style: Only clear district if state changed
                 const currentState = form.getFieldValue(['address', 'state']);
                 const currentDistrict = form.getFieldValue(['address', 'district']);
-                
+
                 if (currentState !== stateId) {
                     form.setFieldValue(['address', 'district'], undefined);
                 }
@@ -162,9 +164,9 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                         if (response.data.data.error) {
                             message.error("GST Invalid");
                             setGstInfo({ name: '', status: '' });
-                            setError(prev => ({ 
-                                ...prev, 
-                                GST: { type: 'error', message: 'GST Invalid' } 
+                            setError(prev => ({
+                                ...prev,
+                                GST: { type: 'error', message: 'GST Invalid' }
                             }));
                             return false;
                         } else {
@@ -185,27 +187,27 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             }).catch((error) => {
                 // Handle API errors - no mock data, only real API calls
                 console.error('GST verification error:', error);
-                
+
                 if (error.response?.status === 400) {
                     message.error("GST Invalid");
                     setGstInfo({ name: '', status: '' });
-                    setError(prev => ({ 
-                        ...prev, 
-                        GST: { type: 'error', message: 'GST Invalid' } 
+                    setError(prev => ({
+                        ...prev,
+                        GST: { type: 'error', message: 'GST Invalid' }
                     }));
                 } else if (error.response?.status === 429) {
                     message.error("GST verification service temporarily unavailable");
                     setGstInfo({ name: '', status: '' });
-                    setError(prev => ({ 
-                        ...prev, 
-                        GST: { type: 'error', message: 'Service temporarily unavailable' } 
+                    setError(prev => ({
+                        ...prev,
+                        GST: { type: 'error', message: 'Service temporarily unavailable' }
                     }));
                 } else {
                     message.error("GST verification service unavailable");
                     setGstInfo({ name: '', status: '' });
-                    setError(prev => ({ 
-                        ...prev, 
-                        GST: { type: 'error', message: 'Service unavailable' } 
+                    setError(prev => ({
+                        ...prev,
+                        GST: { type: 'error', message: 'Service unavailable' }
                     }));
                 }
             });
@@ -237,7 +239,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
         try {
             if (
                 (form.getFieldValue("phone").length === 10 ||
-                  form.getFieldValue("phone").length === 11) &&
+                    form.getFieldValue("phone").length === 11) &&
                 !error.PNO
             ) {
                 const obj = {
@@ -280,7 +282,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
     };
 
     const toTitleCase = (str) => {
-        return str.replace(/\w\S*/g, (txt) => 
+        return str.replace(/\w\S*/g, (txt) =>
             txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
         );
     };
@@ -301,15 +303,15 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
 
 
     const contactColumns = [
-        { 
-            title: <Text strong>Phone Number</Text>, 
-            dataIndex: 'phone', 
+        {
+            title: <Text strong>Phone Number</Text>,
+            dataIndex: 'phone',
             key: 'phone',
             render: (record) => <span>{record}</span>
         },
-        { 
-            title: <Text strong>Category</Text>, 
-            dataIndex: 'category', 
+        {
+            title: <Text strong>Category</Text>,
+            dataIndex: 'category',
             key: 'category',
             render: (record) => <span>{record}</span>
         },
@@ -319,9 +321,9 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             render: (_, record, index) => (
                 editable ? (
                     <div>
-                        <Button 
-                            type="link" 
-                            icon={<EditOutlined />} 
+                        <Button
+                            type="link"
+                            icon={<EditOutlined />}
                             onClick={() => editContact(record)}
                         />
                         <Popconfirm title="Remove contact?" onConfirm={() => removeContact(index)}>
@@ -334,9 +336,9 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
     ];
 
     return (
-        <Form 
-            form={form} 
-            layout="vertical" 
+        <Form
+            form={form}
+            layout="vertical"
             disabled={!editable}
             onValuesChange={(changedValues, allValues) => {
                 // Update parent data when form values change
@@ -345,15 +347,15 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
         >
             <Row gutter={16}>
                 <Col span={12}>
-                    <Form.Item 
-                        name="name" 
-                        label="Branch Name" 
+                    <Form.Item
+                        name="name"
+                        label="Branch Name"
                         validateStatus={error.NAME && error.NAME.type}
                         help={error.NAME && error.NAME.message}
                         rules={[{ required: true, message: 'Enter Branch Name!' }]}
                     >
-                        <Input 
-                            placeholder="Branch Name" 
+                        <Input
+                            placeholder="Branch Name"
                             disabled={!editable}
                             onKeyUp={(e) => form.setFieldValue('name', formatValue(e, 'titleCase'))}
                             pattern="^[A-Z][a-zA-Z.\s]*[a-zA-Z.]+$"
@@ -375,15 +377,15 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             <Divider titlePlacement="left">Address</Divider>
             <Row gutter={16}>
                 <Col span={8}>
-                    <Form.Item 
-                        name={['address', 'line1']} 
-                        label="Address Line 1" 
+                    <Form.Item
+                        name={['address', 'line1']}
+                        label="Address Line 1"
                         validateStatus={error.address && error.address.type}
                         help={error.address && error.address.message}
                         rules={[{ required: true, message: 'Enter Address Line 1!' }]}
                     >
-                        <Input 
-                            placeholder="Address Line 1" 
+                        <Input
+                            placeholder="Address Line 1"
                             disabled={!editable}
                             maxLength={50}
                             pattern="^([a-zA-Z0-9\-/,]+[ \-/,])*\w+.?$"
@@ -393,13 +395,13 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={8}>
-                    <Form.Item 
-                        name={['address', 'line2']} 
+                    <Form.Item
+                        name={['address', 'line2']}
                         label="Address Line 2"
                         rules={[{ required: false }]}
                     >
-                        <Input 
-                            placeholder="Address Line 2" 
+                        <Input
+                            placeholder="Address Line 2"
                             disabled={!editable}
                             maxLength={50}
                             pattern="^([a-zA-Z0-9\-/,]+[ \-/,])*\w+.?$"
@@ -408,15 +410,15 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={8}>
-                    <Form.Item 
-                        name={['address', 'locality']} 
-                        label="Locality" 
+                    <Form.Item
+                        name={['address', 'locality']}
+                        label="Locality"
                         validateStatus={error.locality && error.locality.type}
                         help={error.locality && error.locality.message}
                         rules={[{ required: true, message: 'Enter Locality!' }]}
                     >
-                        <Input 
-                            placeholder="Locality" 
+                        <Input
+                            placeholder="Locality"
                             disabled={!editable}
                             maxLength={50}
                             pattern="^([a-zA-Z0-9\-/,]+[ \-/,])*\w+.?$"
@@ -429,9 +431,9 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
 
             <Row gutter={16}>
                 <Col span={6}>
-                    <Form.Item 
-                        name={['address', 'country']} 
-                        label="Country" 
+                    <Form.Item
+                        name={['address', 'country']}
+                        label="Country"
                         rules={[{ required: true, message: 'Select Country!' }]}
                     >
                         <Select
@@ -452,9 +454,9 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={6}>
-                    <Form.Item 
-                        name={['address', 'state']} 
-                        label="State" 
+                    <Form.Item
+                        name={['address', 'state']}
+                        label="State"
                         rules={[{ required: true, message: 'Select State!' }]}
                     >
                         <Select
@@ -474,13 +476,13 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={6}>
-                    <Form.Item 
-                        name={['address', 'district']} 
-                        label="City" 
+                    <Form.Item
+                        name={['address', 'district']}
+                        label="City"
                         rules={[{ required: true, message: 'Select City!' }]}
                     >
-                        <Select 
-                            placeholder="City" 
+                        <Select
+                            placeholder="City"
                             disabled={!editable || booleanCity}
                             showSearch
                             filterOption={(input, option) =>
@@ -492,15 +494,15 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={6}>
-                    <Form.Item 
-                        name={['address', 'pincode']} 
-                        label="Pincode" 
+                    <Form.Item
+                        name={['address', 'pincode']}
+                        label="Pincode"
                         validateStatus={error.PIN && error.PIN.type}
                         help={error.PIN && error.PIN.message}
                         rules={[{ required: true, message: 'Enter Pincode!' }]}
                     >
-                        <Input 
-                            placeholder="Pincode" 
+                        <Input
+                            placeholder="Pincode"
                             disabled={!editable}
                             maxLength={7}
                             pattern="([0-9]{6}|[0-9]{3}\s[0-9]{3})"
@@ -515,14 +517,14 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             {editable && (
                 <Row gutter={16} align="bottom" style={{ marginBottom: '16px' }}>
                     <Col span={5}>
-                        <Form.Item 
-                            label="Phone" 
-                            colon={false} 
+                        <Form.Item
+                            label="Phone"
+                            colon={false}
                             required
                             validateStatus={error.PNO && error.PNO.type}
                             help={error.PNO && error.PNO.message}
                         >
-                            <Form.Item 
+                            <Form.Item
                                 name="phone"
                                 rules={[{ required: false, message: 'Enter Phone' }]}
                             >
@@ -570,9 +572,9 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                         </Form.Item>
                     </Col>
                     <Col span={4}>
-                        <Form.Item 
-                            label="Category" 
-                            colon={false} 
+                        <Form.Item
+                            label="Category"
+                            colon={false}
                             required
                             name="category"
                             rules={[{ required: false, message: 'Enter Category' }]}
@@ -588,8 +590,8 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                         </Form.Item>
                     </Col>
                     <Col span={3}>
-                        <Form.Item 
-                            label=" " 
+                        <Form.Item
+                            label=" "
                             colon={false}
                             style={{ marginBottom: 0 }}
                         >
@@ -599,7 +601,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                                     onClick={() => {
                                         if (
                                             (form.getFieldValue("phone").length === 10 ||
-                                              form.getFieldValue("phone").length === 11) &&
+                                                form.getFieldValue("phone").length === 11) &&
                                             !error.PNO &&
                                             form.getFieldValue("category")
                                         ) {
@@ -680,15 +682,15 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             </Row>
             <Row gutter={16}>
                 <Col span={8}>
-                    <Form.Item 
-                        name="email" 
+                    <Form.Item
+                        name="email"
                         label="Email"
                         validateStatus={error.EMAIL && error.EMAIL.type}
                         help={error.EMAIL && error.EMAIL.message}
                         rules={[{ type: 'email', message: 'Enter Valid Email!' }]}
                     >
-                        <Input 
-                            placeholder="Branch Email" 
+                        <Input
+                            placeholder="Branch Email"
                             disabled={!editable}
                             pattern='^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
                             onInput={(e) => validateField('EMAIL', e.target.value, /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/, 'Enter Valid Email')}
@@ -696,13 +698,13 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={8}>
-                    <Form.Item 
-                        name="noOfRamps" 
+                    <Form.Item
+                        name="noOfRamps"
                         label="No. of Ramps"
                         rules={[{ required: false, message: 'Enter Ramp count' }]}
                     >
-                        <InputNumber 
-                            placeholder="0" 
+                        <InputNumber
+                            placeholder="0"
                             disabled={!editable}
                             min={0}
                             max={9999}
@@ -711,15 +713,15 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={8}>
-                    <Form.Item 
-                        name="gst" 
+                    <Form.Item
+                        name="gst"
                         label="GSTIN"
                         validateStatus={error.GST && error.GST.type}
                         help={error.GST && error.GST.message}
                         rules={[{ required: true, message: 'Enter GSTIN!' }]}
                     >
-                        <Input 
-                            placeholder="GSTIN" 
+                        <Input
+                            placeholder="GSTIN"
                             disabled={!editable}
                             maxLength={15}
                             onKeyUp={(e) => form.setFieldValue('gst', formatValue(e, 'toUpperCase'))}
@@ -752,8 +754,8 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                     {gstInfo.name && (
                         <Row type="flex" align="middle" style={{ marginTop: '2px', marginBottom: '4px' }}>
-                            <CheckCircleOutlined 
-                                style={{ fontSize: 18, marginRight: '8px' }} 
+                            <CheckCircleOutlined
+                                style={{ fontSize: 18, marginRight: '8px' }}
                                 twoToneColor="#52c41a"
                             />
                             <span style={{ color: '#52c41a', fontSize: '12px' }}>
@@ -765,24 +767,24 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             </Row>
             <Row gutter={16}>
                 <Col span={8}>
-                    <Form.Item 
-                        name="lat" 
+                    <Form.Item
+                        name="lat"
                         label="Latitude"
                         validateStatus={error.LAT && error.LAT.type}
                         help={error.LAT && error.LAT.message}
                         rules={[{ required: true, message: 'Enter Latitude!' }]}
                     >
-                        <Input 
-                            placeholder="Enter Latitude" 
+                        <Input
+                            placeholder="Enter Latitude"
                             disabled={!editable}
                             type="number"
                             step="0.000001"
                             onInput={(e) => {
                                 const value = parseFloat(e.target.value);
                                 if (isNaN(value) || value < -90 || value > 90) {
-                                    setError({ 
-                                        ...error, 
-                                        LAT: { type: 'error', message: 'Latitude must be between -90 and 90' } 
+                                    setError({
+                                        ...error,
+                                        LAT: { type: 'error', message: 'Latitude must be between -90 and 90' }
                                     });
                                 } else {
                                     delete error.LAT;
@@ -793,24 +795,24 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={8}>
-                    <Form.Item 
-                        name="lon" 
+                    <Form.Item
+                        name="lon"
                         label="Longitude"
                         validateStatus={error.LON && error.LON.type}
                         help={error.LON && error.LON.message}
                         rules={[{ required: true, message: 'Enter Longitude!' }]}
                     >
-                        <Input 
-                            placeholder="Enter Longitude" 
+                        <Input
+                            placeholder="Enter Longitude"
                             disabled={!editable}
                             type="number"
                             step="0.000001"
                             onInput={(e) => {
                                 const value = parseFloat(e.target.value);
                                 if (isNaN(value) || value < -180 || value > 180) {
-                                    setError(prev => ({ 
-                                        ...prev, 
-                                        LON: { type: 'error', message: 'Longitude must be between -180 and 180' } 
+                                    setError(prev => ({
+                                        ...prev,
+                                        LON: { type: 'error', message: 'Longitude must be between -180 and 180' }
                                     }));
                                 } else {
                                     setError(prev => {
@@ -824,13 +826,13 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                     </Form.Item>
                 </Col>
                 <Col span={8}>
-                    <Form.Item 
-                        name="url" 
+                    <Form.Item
+                        name="url"
                         label="Website URL"
                         rules={[{ required: false }]}
                     >
-                        <Input 
-                            placeholder="Website URL" 
+                        <Input
+                            placeholder="Website URL"
                             disabled={!editable}
                         />
                     </Form.Item>
@@ -838,13 +840,13 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             </Row>
             <Row gutter={16}>
                 <Col span={24}>
-                    <Form.Item 
-                        name="googleMapUrl" 
+                    <Form.Item
+                        name="googleMapUrl"
                         label="Google Map URL"
                         rules={[{ required: false }]}
                     >
-                        <Input 
-                            placeholder="Google Map URL" 
+                        <Input
+                            placeholder="Google Map URL"
                             disabled={!editable}
                         />
                     </Form.Item>

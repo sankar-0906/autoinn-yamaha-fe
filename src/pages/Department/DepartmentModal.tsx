@@ -43,8 +43,6 @@ const accessFields: Array<keyof Omit<RoleAccessRow, 'key' | 'master' | 'subModul
 const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave, initialValues, loading, readOnly }) => {
     const [form] = Form.useForm();
     const [roleRows, setRoleRows] = useState<RoleAccessRow[]>([]);
-    const [selectedModule, setSelectedModule] = useState<string | null>(null);
-    const [selectedSubModule, setSelectedSubModule] = useState<string | null>(null);
 
     useEffect(() => {
         if (open) {
@@ -65,6 +63,9 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
     }, [open, initialValues, form]);
 
     const handleAddRow = () => {
+        const selectedModule = form.getFieldValue('tempModule');
+        const selectedSubModule = form.getFieldValue('tempSubModule');
+
         if (!selectedModule || !selectedSubModule) {
             message.warning('Please select Module and Sub Module first');
             return;
@@ -88,8 +89,7 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
         };
 
         setRoleRows([...roleRows, newRow]);
-        setSelectedModule(null);
-        setSelectedSubModule(null);
+        form.setFieldsValue({ tempModule: null, tempSubModule: null });
     };
 
     const handleAddAll = () => {
@@ -126,6 +126,12 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
         }
         try {
             const values = await form.validateFields();
+
+            if (roleRows.length === 0) {
+                message.error('Please add at least one module access');
+                return;
+            }
+
             const roleAccess = roleRows.map(r => ({
                 master: r.master,
                 subModule: r.subModule,
@@ -137,13 +143,13 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
                     print: r.print,
                 }
             }));
-            onSave({ ...values, roleAccess });
+
+            const { tempModule, tempSubModule, ...finalValues } = values;
+            onSave({ ...finalValues, roleAccess });
         } catch (err) {
             // Error handling is managed by Form.Item rules
         }
     };
-
-    const filteredSubModules = submodulesData.submodules.filter(sm => sm.id === selectedModule);
 
     const columns = [
         {
@@ -199,7 +205,7 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
             title={<div className={styles.modalTitle}>{readOnly ? "View Department" : "Department"}</div>}
             okText="OK"
             cancelText="Cancel"
-            destroyOnClose
+            destroyOnHidden
             closable={false}
             footer={readOnly ? [ // Hide OK button if readOnly
                 <Button key="close" onClick={onClose}>Close</Button>
@@ -208,13 +214,24 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
             <Form form={form} layout="vertical">
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Form.Item name="role" label="Department Name" rules={[{ required: true, message: 'Please enter department name' }]}>
-                            <Input placeholder="Department Name" disabled={readOnly} /> {/* Disabled if readOnly */}
+                        <Form.Item
+                            name="role"
+                            label="Department Name"
+                            rules={[
+                                { required: true, message: 'Enter Department Name' },
+                                { whitespace: true, message: 'Enter Department Name' },
+                                {
+                                    pattern: /^[A-Za-z][a-zA-Z\s]*[a-zA-Z]+$/,
+                                    message: 'Enter Valid Department Name'
+                                }
+                            ]}
+                        >
+                            <Input placeholder="Department Name" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={12}>
                         <Form.Item name="departmentType" label="Department Type" rules={[{ required: true, message: 'Please select department type' }]}>
-                            <Select mode="multiple" placeholder="Select Type" disabled={readOnly}> {/* Disabled if readOnly */}
+                            <Select mode="multiple" placeholder="Select Type" disabled={readOnly}>
                                 {['SALES', 'SERVICE', 'SPARES', 'GENERAL']
                                     .filter(t => !(form.getFieldValue('departmentType') || []).includes(t))
                                     .map(t => (
@@ -224,8 +241,13 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
                         </Form.Item>
                     </Col>
                 </Row>
-                <Form.Item name="othersAccess" label="Manager" initialValue={false}>
-                    <Radio.Group disabled={readOnly}> {/* Disabled if readOnly */}
+                <Form.Item
+                    name="othersAccess"
+                    label="Manager"
+                    required
+                    rules={[{ required: true, message: 'Please select Manager' }]}
+                >
+                    <Radio.Group disabled={readOnly}>
                         <Radio value={true}>Yes</Radio>
                         <Radio value={false}>No</Radio>
                     </Radio.Group>
@@ -235,12 +257,17 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
                     {!readOnly && ( // Hide this section if readOnly
                         <Row gutter={16} align="bottom">
                             <Col span={6}>
-                                <Form.Item label="Select Module" style={{ marginBottom: 0 }}>
+                                <Form.Item
+                                    name="tempModule"
+                                    label="Select Module"
+                                    style={{ marginBottom: 0 }}
+                                    required
+                                    rules={[{ required: true, message: 'Please select Module' }]}
+                                >
                                     <Select
-                                        value={selectedModule}
-                                        onChange={setSelectedModule}
                                         placeholder="Select Module"
                                         allowClear
+                                        onChange={() => form.setFieldsValue({ tempSubModule: null })}
                                     >
                                         {submodulesData.modules.map(m => (
                                             <Option key={m.key} value={m.key}>{m.title}</Option>
@@ -249,15 +276,20 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
                                 </Form.Item>
                             </Col>
                             <Col span={6}>
-                                <Form.Item label="Select Sub Module" style={{ marginBottom: 0 }}>
+                                <Form.Item
+                                    name="tempSubModule"
+                                    label="Select Sub Module"
+                                    style={{ marginBottom: 0 }}
+                                    required
+                                    rules={[{ required: true, message: 'Please select Sub Module' }]}
+                                >
                                     <Select
-                                        value={selectedSubModule}
-                                        onChange={setSelectedSubModule}
                                         placeholder="Select Sub Module"
                                         allowClear
                                     >
-                                        {filteredSubModules
-                                            .filter(sm => !roleRows.some(r => r.master === selectedModule && r.subModule === sm.title))
+                                        {submodulesData.submodules
+                                            .filter(sm => sm.id === form.getFieldValue('tempModule'))
+                                            .filter(sm => !roleRows.some(r => r.master === form.getFieldValue('tempModule') && r.subModule === sm.title))
                                             .map(sm => (
                                                 <Option key={sm.key} value={sm.title}>{sm.title}</Option>
                                             ))}

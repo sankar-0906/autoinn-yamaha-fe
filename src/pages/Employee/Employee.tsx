@@ -23,7 +23,7 @@ const EmployeePage: React.FC = () => {
         setLoading(true);
         try {
             const res = await getEmployees();
-            setEmployees(res.data || []);
+            setEmployees(res.data.users || []);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch employees');
         } finally {

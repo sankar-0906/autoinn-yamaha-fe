@@ -27,7 +27,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
             try {
                 const [deptRes, branchRes] = await Promise.all([getDepartments(), getBranches()]);
                 setDepartments(deptRes.data.data || []);
-                setBranches(branchRes.data.branches || []);
+                setBranches(branchRes.data.branch || []);
             } catch (error) {
                 message.error('Failed to fetch departments or branches');
             }
@@ -42,7 +42,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
                     ...initialValues,
                     ...initialValues.profile,
                     departmentId: initialValues.profile?.departmentId,
-                    branchId: initialValues.profile?.branch?.id || initialValues.profile?.branchId,
+                    branchId: initialValues.profile?.branch?.map((b: any) => b.id) || [],
                     dateOfBirth: initialValues.profile?.dateOfBirth ? dayjs(initialValues.profile.dateOfBirth) : null,
                     dateOfJoining: initialValues.profile?.dateOfJoining ? dayjs(initialValues.profile.dateOfJoining) : null,
                     ifscCode: initialValues.profile?.bankDetails?.ifsc,
@@ -146,15 +146,15 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
                             </Select>
                         </Form.Item>
                     </Col>
-                    {/* <Col span={8}>
+                    <Col span={8}>
                         <Form.Item name="branchId" label="Branch" rules={[{ required: true, message: 'Please select branch' }]}>
-                            <Select placeholder="Select Branch">
+                            <Select mode="multiple" placeholder="Select Branch" disabled={readOnly}>
                                 {branches.map(b => (
                                     <Option key={b.id} value={b.id}>{b.name}</Option>
                                 ))}
                             </Select>
                         </Form.Item>
-                    </Col> */}
+                    </Col>
                 </Row>
                 <Row gutter={24}>
                     <Col span={8}>
