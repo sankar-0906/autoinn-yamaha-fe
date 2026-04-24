@@ -73,3 +73,45 @@
     border-bottom: 1px solid #eceff1;
     padding-bottom: 8px;
 }
+
+.logoUploadContainer {
+    background: #fcfcfc;
+    border: 1px dashed #d9d9d9;
+    border-radius: 8px;
+    transition: all 0.3s;
+    text-align: center;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 150px;
+}
+
+.logoUploadContainer :global(.ant-upload-drag) {
+    background: transparent;
+    border: none;
+}
+
+.logoUploadContainer:hover {
+    border-color: #1a8a7a;
+    background: #f6fafa;
+}
+
+.logoPreview {
+    max-height: 100px;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.compactFormItem {
+    margin-bottom: 12px !important;
+}
+
+.logoLabel {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(0, 0, 0, 0.85);
+    font-size: 14px;
+}

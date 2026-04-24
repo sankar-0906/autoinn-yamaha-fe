@@ -34,12 +34,6 @@ const CompanyTable = (props) => {
       render: (text) => <span>{text}</span>,
     },
     {
-      title: "Address Type",
-      dataIndex: "branchType",
-      key: "type",
-      render: (text) => <span>{text}</span>,
-    },
-    {
       title: "Action",
       render: (data) => (
         <div>

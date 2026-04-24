@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Form, Input, Select, Button, Table, message, Tag, Space, Typography, Steps, Row, Col, Card
+    Form, Input, Select, Button, Table, message, Space, Typography, Steps, Row, Col, Card
 } from 'antd';
 import {
     BankOutlined, ApartmentOutlined, UserOutlined, PlusOutlined, DeleteOutlined, CheckCircleOutlined
@@ -161,7 +161,6 @@ const GetStarted: React.FC = () => {
                                 className={styles.branchTable}
                                 columns={[
                                     { title: 'Branch Name', dataIndex: 'name' },
-                                    { title: 'Type', dataIndex: 'branchType', render: (val) => <Tag color="cyan">{val}</Tag> },
                                     { title: 'GST', dataIndex: 'gst' },
                                     {
                                         title: 'Action',

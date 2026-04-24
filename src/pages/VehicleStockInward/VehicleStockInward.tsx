@@ -2,6 +2,7 @@ import {
     Table, Button, Input, Space, Typography, message, Modal, Tooltip
 } from 'antd';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     SearchOutlined,
     LeftOutlined,
@@ -12,19 +13,16 @@ import {
     ExclamationCircleOutlined
 } from '@ant-design/icons';
 import { getVehicleStockInwards, deleteVehicleStockInward } from '../../api/vehicleStockInward';
-import InwardImportModal from './components/InwardImportModal';
 import styles from './VehicleStockInward.module.css';
 
 const { Title } = Typography;
 const { confirm } = Modal;
 
 const VehicleStockInwardPage: React.FC = () => {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [searchText, setSearchText] = useState('');
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalMode, setModalMode] = useState<'import' | 'view' | 'edit'>('import');
-    const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -67,25 +65,11 @@ const VehicleStockInwardPage: React.FC = () => {
     };
 
     const handleAction = (mode: 'view' | 'edit', record: any) => {
-        // DEBUG: Log the record data when clicking View/Edit
-        console.log('=== DEBUG: View/Edit Button Clicked ===');
-        console.log('Mode:', mode);
-        console.log('Complete Record:', record);
-        console.log('Record ID:', record.id);
-        console.log('Record items:', record.items);
-        console.log('Record VEHICLES:', record.VEHICLES);
-        console.log('Record lineItems:', record.lineItems);
-        console.log('=== END DEBUG ===');
-        
-        setModalMode(mode);
-        setSelectedRecord(record);
-        setModalVisible(true);
+        navigate(`/company/vehicle-stock-inward/${mode}/${record.id}`);
     };
 
     const handleImportClick = () => {
-        setModalMode('import');
-        setSelectedRecord(null);
-        setModalVisible(true);
+        navigate('/company/vehicle-stock-inward/import');
     };
 
     const columns = [
@@ -174,7 +158,7 @@ const VehicleStockInwardPage: React.FC = () => {
                     <Button
                         icon={<LeftOutlined />}
                         shape="circle"
-                        onClick={() => window.history.back()}
+                        onClick={() => navigate('/dashboard')}
                     />
                     <Title level={4} style={{ margin: 0 }}>
                         Vehicle Stock Inward [{loading ? '...' : filteredData.length}]
@@ -208,17 +192,6 @@ const VehicleStockInwardPage: React.FC = () => {
                     pagination={{ pageSize: 10 }}
                 />
             </div>
-
-            <InwardImportModal
-                open={modalVisible}
-                mode={modalMode}
-                initialData={selectedRecord}
-                onClose={() => setModalVisible(false)}
-                onSuccess={() => {
-                    setModalVisible(false);
-                    fetchData();
-                }}
-            />
         </div>
     );
 };

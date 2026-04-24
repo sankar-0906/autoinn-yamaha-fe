@@ -24,15 +24,16 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
         // Fetch Countries
         axiosInstance.get('/location/countries').then(res => {
             if (res.data.success) {
-                setCountries(res.data.data || []);
-                // Find India and set it as default, or use first country if India not found
-                const india = res.data.data?.find(country =>
-                    country.name.toLowerCase().includes('india')
+                const fetchedCountries = res.data.data || [];
+                setCountries(fetchedCountries);
+
+                // Set India as default
+                const india = fetchedCountries.find(c =>
+                    c.name && c.name.toLowerCase() === 'india'
                 );
-                const defaultCountry = india || res.data.data?.[0];
+                const defaultCountry = india || fetchedCountries[0];
 
                 if (defaultCountry?.id) {
-                    // Only set default if no existing value
                     const currentCountry = form.getFieldValue(['address', 'country']);
                     if (!currentCountry) {
                         form.setFieldValue(['address', 'country'], defaultCountry.id);
@@ -88,13 +89,11 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             };
 
             updateFormValue('name', data.name);
-            updateFormValue('branchType', data.branchType);
             updateFormValue('email', data.email);
             updateFormValue('url', data.url);
             updateFormValue('googleMapUrl', data.googleMapUrl);
             updateFormValue('lat', data.lat);
             updateFormValue('lon', data.lon);
-            updateFormValue('noOfRamps', data.noOfRamps);
             updateFormValue('manufacturer', data.manufacturer);
             updateFormValue('personInCharge', data.personInCharge);
             updateFormValue('gst', data.gst);
@@ -346,7 +345,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             }}
         >
             <Row gutter={16}>
-                <Col span={12}>
+                <Col span={24}>
                     <Form.Item
                         name="name"
                         label="Branch Name"
@@ -361,15 +360,6 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                             pattern="^[A-Z][a-zA-Z.\s]*[a-zA-Z.]+$"
                             onInput={(e) => validateField('NAME', e.target.value, /^[A-Z][a-zA-Z.\s]*[a-zA-Z.]+$/, 'Enter Valid Name')}
                         />
-                    </Form.Item>
-                </Col>
-                <Col span={12}>
-                    <Form.Item name="branchType" label="Branch Type" rules={[{ required: true, message: 'Select Branch Type!' }]}>
-                        <Select placeholder="Select Type" disabled={!editable}>
-                            <Select.Option value="Showroom">Showroom</Select.Option>
-                            <Select.Option value="Workshop">Workshop</Select.Option>
-                            <Select.Option value="Showroom + Workshop">Showroom + Workshop</Select.Option>
-                        </Select>
                     </Form.Item>
                 </Col>
             </Row>
@@ -516,9 +506,9 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
             <Divider titlePlacement="left">Contacts</Divider>
             {editable && (
                 <Row gutter={16} align="bottom" style={{ marginBottom: '16px' }}>
-                    <Col span={5}>
+                    <Col span={9}>
                         <Form.Item
-                            label="Phone"
+                            label={<Text strong>Phone</Text>}
                             colon={false}
                             required
                             validateStatus={error.PNO && error.PNO.type}
@@ -526,7 +516,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                         >
                             <Form.Item
                                 name="phone"
-                                rules={[{ required: false, message: 'Enter Phone' }]}
+                                noStyle
                             >
                                 <Input
                                     placeholder="Phone Number"
@@ -547,7 +537,6 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                                             delete error.PNO;
                                             setError({ ...error });
                                         }
-                                        // Autoinn-style duplicate check
                                         if (dataSource.length > 0) {
                                             if (event.target.checkValidity()) {
                                                 for (let i = 0; i < dataSource.length; i++) {
@@ -571,35 +560,36 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                             </Form.Item>
                         </Form.Item>
                     </Col>
-                    <Col span={4}>
+                    <Col span={9}>
                         <Form.Item
-                            label="Category"
+                            label={<Text strong>Category</Text>}
                             colon={false}
                             required
-                            name="category"
-                            rules={[{ required: false, message: 'Enter Category' }]}
                         >
-                            <Select
-                                placeholder="Category"
-                                style={{ width: '100%' }}
-                            >
-                                <Select.Option value="Sales">Sales</Select.Option>
-                                <Select.Option value="Service">Service</Select.Option>
-                                <Select.Option value="Spares">Spares</Select.Option>
-                            </Select>
+                            <Form.Item name="category" noStyle>
+                                <Select
+                                    placeholder="Category"
+                                    style={{ width: '100%' }}
+                                >
+                                    <Select.Option value="Sales">Sales</Select.Option>
+                                    <Select.Option value="Service">Service</Select.Option>
+                                    <Select.Option value="Spares">Spares</Select.Option>
+                                </Select>
+                            </Form.Item>
                         </Form.Item>
                     </Col>
-                    <Col span={3}>
+                    <Col span={6}>
                         <Form.Item
                             label=" "
                             colon={false}
-                            style={{ marginBottom: 0 }}
                         >
                             {!editPhone ? (
                                 <Button
                                     type="primary"
+                                    block
                                     onClick={() => {
                                         if (
+                                            form.getFieldValue("phone") &&
                                             (form.getFieldValue("phone").length === 10 ||
                                                 form.getFieldValue("phone").length === 11) &&
                                             !error.PNO &&
@@ -613,7 +603,6 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                                             setDataSource([...dataSource, obj]);
                                             form.setFieldValue('phone', undefined);
                                             form.setFieldValue('category', undefined);
-                                            // Clear contact error when contact is added
                                             if (error.CON) {
                                                 delete error.CON;
                                                 setError({ ...error });
@@ -628,6 +617,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                             ) : (
                                 <Button
                                     type="primary"
+                                    block
                                     onClick={() => editingPhone()}
                                 >
                                     Save
@@ -681,7 +671,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                 </Col>
             </Row>
             <Row gutter={16}>
-                <Col span={8}>
+                <Col span={12}>
                     <Form.Item
                         name="email"
                         label="Email"
@@ -697,22 +687,7 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
                         />
                     </Form.Item>
                 </Col>
-                <Col span={8}>
-                    <Form.Item
-                        name="noOfRamps"
-                        label="No. of Ramps"
-                        rules={[{ required: false, message: 'Enter Ramp count' }]}
-                    >
-                        <InputNumber
-                            placeholder="0"
-                            disabled={!editable}
-                            min={0}
-                            max={9999}
-                            style={{ width: '100%' }}
-                        />
-                    </Form.Item>
-                </Col>
-                <Col span={8}>
+                <Col span={12}>
                     <Form.Item
                         name="gst"
                         label="GSTIN"

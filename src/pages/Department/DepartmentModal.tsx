@@ -261,8 +261,7 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
                                     name="tempModule"
                                     label="Select Module"
                                     style={{ marginBottom: 0 }}
-                                    required
-                                    rules={[{ required: true, message: 'Please select Module' }]}
+                                    required={roleRows.length === 0}
                                 >
                                     <Select
                                         placeholder="Select Module"
@@ -277,23 +276,32 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({ open, onClose, onSave
                             </Col>
                             <Col span={6}>
                                 <Form.Item
-                                    name="tempSubModule"
-                                    label="Select Sub Module"
-                                    style={{ marginBottom: 0 }}
-                                    required
-                                    rules={[{ required: true, message: 'Please select Sub Module' }]}
+                                    noStyle
+                                    shouldUpdate={(prevValues, currentValues) => prevValues.tempModule !== currentValues.tempModule}
                                 >
-                                    <Select
-                                        placeholder="Select Sub Module"
-                                        allowClear
-                                    >
-                                        {submodulesData.submodules
-                                            .filter(sm => sm.id === form.getFieldValue('tempModule'))
-                                            .filter(sm => !roleRows.some(r => r.master === form.getFieldValue('tempModule') && r.subModule === sm.title))
-                                            .map(sm => (
-                                                <Option key={sm.key} value={sm.title}>{sm.title}</Option>
-                                            ))}
-                                    </Select>
+                                    {({ getFieldValue }) => {
+                                        const selectedModule = getFieldValue('tempModule');
+                                        return (
+                                            <Form.Item
+                                                name="tempSubModule"
+                                                label="Select Sub Module"
+                                                style={{ marginBottom: 0 }}
+                                                required={!!selectedModule}
+                                            >
+                                                <Select
+                                                    placeholder="Select Sub Module"
+                                                    allowClear
+                                                >
+                                                    {submodulesData.submodules
+                                                        .filter(sm => sm.id === selectedModule)
+                                                        .filter(sm => !roleRows.some(r => r.master === selectedModule && r.subModule === sm.title))
+                                                        .map(sm => (
+                                                            <Option key={sm.key} value={sm.title}>{sm.title}</Option>
+                                                        ))}
+                                                </Select>
+                                            </Form.Item>
+                                        );
+                                    }}
                                 </Form.Item>
                             </Col>
                             <Col span={12}>

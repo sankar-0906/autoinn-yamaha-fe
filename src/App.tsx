@@ -12,9 +12,11 @@ import VehicleMasterPage from './pages/VehicleMaster/VehicleMaster';
 import PartsMasterPage from './pages/PartsMaster/PartsMaster';
 import DealerMasterPage from './pages/DealerMaster/DealerMaster';
 import IdGeneratorPage from './pages/IdGenerator/IdGenerator';
+import VehicleInventoryPage from './pages/VehicleInventory/VehicleInventory';
+import VehicleInventoryDetailPage from './pages/VehicleInventory/VehicleInventoryDetail';
 import FrameNumberPage from './pages/FrameNumber/FrameNumber';
 import VehicleStockInwardPage from './pages/VehicleStockInward/VehicleStockInward';
-import SupplierMasterPage from './components/CompanyMasters/Company/SupplierMaster';
+import InwardImportPage from './pages/VehicleStockInward/InwardImportPage';
 import HSNCodePage from './components/CompanyMasters/Company/HSNCode';
 import BranchPage from './components/CompanyMasters/Company/Branch';
 
@@ -93,9 +95,13 @@ const App: React.FC = () => {
               <Route path="dealer_master" element={<DealerMasterPage />} />
               <Route path="idgenerator" element={<IdGeneratorPage />} />
               <Route path="frame_number" element={<FrameNumberPage />} />
-              <Route path="supplier_master" element={<SupplierMasterPage />} />
               <Route path="hsn_code" element={<HSNCodePage />} />
               <Route path="vehicle-stock-inward" element={<VehicleStockInwardPage />} />
+              <Route path="vehicle-stock-inward/import" element={<InwardImportPage />} />
+              <Route path="vehicle-stock-inward/view/:id" element={<InwardImportPage />} />
+              <Route path="vehicle-stock-inward/edit/:id" element={<InwardImportPage />} />
+              <Route path="vehicle-inventory" element={<VehicleInventoryPage />} />
+              <Route path="vehicle-inventory/details" element={<VehicleInventoryDetailPage />} />
             </Route>
           </Route>
 

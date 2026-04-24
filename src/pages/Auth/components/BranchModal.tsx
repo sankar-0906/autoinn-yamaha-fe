@@ -1,7 +1,6 @@
 import React from 'react';
-import { Modal, Form, Input, Select, Button } from 'antd';
+import { Modal, Form, Input, Button } from 'antd';
 
-const { Option } = Select;
 
 interface BranchModalProps {
     open: boolean;
@@ -51,14 +50,6 @@ const BranchModal: React.FC<BranchModalProps> = ({ open, onClose, onAdd }) => {
                     rules={[{ required: true, message: 'Please enter branch name' }]}
                 >
                     <Input placeholder="Branch Name" style={{ background: 'rgba(255,255,255,0.05)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }} />
-                </Form.Item>
-                <Form.Item name="branchType" label={<span style={{ color: 'rgba(255,255,255,0.85)' }}>Branch Type</span>}>
-                    <Select placeholder="Select Branch Type" allowClear popupClassName="darkSelect">
-                        <Option value="HQ">HQ</Option>
-                        <Option value="SHOWROOM">Showroom</Option>
-                        <Option value="SERVICE_CENTER">Service Center</Option>
-                        <Option value="WAREHOUSE">Warehouse</Option>
-                    </Select>
                 </Form.Item>
                 <Form.Item name="gst" label={<span style={{ color: 'rgba(255,255,255,0.85)' }}>GST Number</span>}>
                     <Input placeholder="GST Number" style={{ background: 'rgba(255,255,255,0.05)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }} />

@@ -108,6 +108,17 @@ const PartsMasterPage: React.FC = () => {
             key: 'partName',
         },
         {
+            title: 'HSN',
+            dataIndex: ['hsn', 'code'],
+            key: 'hsn',
+        },
+        {
+            title: 'MRP',
+            dataIndex: 'mrp',
+            key: 'mrp',
+            render: (val: number) => val ? `₹${val.toFixed(2)}` : '-'
+        },
+        {
             title: 'Action',
             key: 'action',
             render: (_: any, record: any) => (

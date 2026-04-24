@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Row, Col, Typography, Button, InputNumber } from 'antd';
+import { Modal, Form, Input, Select, Row, Col, Typography, Button } from 'antd';
 import styles from './FrameNumber.module.css';
 import { getManufacturers } from '../../api/manufacturer';
 
@@ -46,6 +46,12 @@ const FrameNumberModal: React.FC<FrameNumberModalProps> = ({ open, onClose, onSa
         });
     };
 
+    const inferredField = Form.useWatch('inferredField', form);
+
+    const targetValueOptions = inferredField === 'Month'
+        ? ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+        : Array.from({ length: 31 }, (_, i) => (2000 + i).toString());
+
     return (
         <Modal
             open={open}
@@ -69,8 +75,8 @@ const FrameNumberModal: React.FC<FrameNumberModalProps> = ({ open, onClose, onSa
             <Form form={form} layout="vertical">
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Form.Item name="manufacturerId" label={<span className={styles.formLabel}>Manufacturer</span>} rules={[{ required: true }]}>
-                            <Select placeholder="Select Manufacturer">
+                        <Form.Item name="manufacturerId" label={<span className={styles.formLabel}>Manufacturer</span>} rules={[{ required: true, message: 'Please select manufacturer' }]}>
+                            <Select placeholder="Select Manufacturer" showSearch filterOption={(input, option) => (option?.children as any).toLowerCase().includes(input.toLowerCase())}>
                                 {manufacturers.map(m => (
                                     <Option key={m.id} value={m.id}>{m.name}</Option>
                                 ))}
@@ -78,29 +84,39 @@ const FrameNumberModal: React.FC<FrameNumberModalProps> = ({ open, onClose, onSa
                         </Form.Item>
                     </Col>
                     <Col span={12}>
-                        <Form.Item name="position" label={<span className={styles.formLabel}>Position</span>} rules={[{ required: true }]}>
-                            <InputNumber placeholder="e.g. 10" style={{ width: '100%' }} />
+                        <Form.Item name="position" label={<span className={styles.formLabel}>Position</span>} rules={[{ required: true, message: 'Please select position' }]}>
+                            <Select placeholder="Select Position">
+                                <Option value={9}>9</Option>
+                                <Option value={10}>10</Option>
+                            </Select>
                         </Form.Item>
                     </Col>
                 </Row>
 
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Form.Item name="inputValue" label={<span className={styles.formLabel}>Input Value</span>} rules={[{ required: true }]}>
-                            <Input placeholder="e.g. A" />
+                        <Form.Item name="inputValue" label={<span className={styles.formLabel}>Input Value</span>} rules={[{ required: true, message: 'Please enter input value' }, { len: 1, message: 'Max 1 character' }]}>
+                            <Input placeholder="e.g. A" maxLength={1} onChange={e => form.setFieldsValue({ inputValue: e.target.value.toUpperCase() })} />
                         </Form.Item>
                     </Col>
                     <Col span={12}>
-                        <Form.Item name="inferredField" label={<span className={styles.formLabel}>Inferred Field</span>} rules={[{ required: true }]}>
-                            <Input placeholder="e.g. Year" />
+                        <Form.Item name="inferredField" label={<span className={styles.formLabel}>Inferred Field</span>} rules={[{ required: true, message: 'Please select inferred field' }]}>
+                            <Select placeholder="Select Inferred Field" onChange={() => form.setFieldsValue({ targetValue: undefined })}>
+                                <Option value="Month">Month</Option>
+                                <Option value="Year">Year</Option>
+                            </Select>
                         </Form.Item>
                     </Col>
                 </Row>
 
                 <Row gutter={24}>
                     <Col span={24}>
-                        <Form.Item name="targetValue" label={<span className={styles.formLabel}>Target Value (Result)</span>} rules={[{ required: true }]}>
-                            <Input placeholder="e.g. 2024" />
+                        <Form.Item name="targetValue" label={<span className={styles.formLabel}>Target Value (Result)</span>} rules={[{ required: true, message: 'Please select target value' }]}>
+                            <Select placeholder="Select Target Value" showSearch disabled={!inferredField}>
+                                {targetValueOptions.map(opt => (
+                                    <Option key={opt} value={opt}>{opt}</Option>
+                                ))}
+                            </Select>
                         </Form.Item>
                     </Col>
                 </Row>

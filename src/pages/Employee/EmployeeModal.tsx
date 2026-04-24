@@ -93,19 +93,19 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item name="fatherName" label="Father's Name">
+                        <Form.Item name="fatherName" label="Father's Name" rules={[{ required: true, message: "Please enter father's name" }]}>
                             <Input placeholder="Father's Name" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item name="dateOfBirth" label="DOB">
+                        <Form.Item name="dateOfBirth" label="DOB" rules={[{ required: true, message: 'Please select date of birth' }]}>
                             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="DD/MM/YYYY" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                 </Row>
                 <Row gutter={24}>
                     <Col span={8}>
-                        <Form.Item name="phone2" label="Personal Mobile Number">
+                        <Form.Item name="phone2" label="Personal Mobile Number" rules={[{ required: true, message: 'Please enter personal mobile number' }]}>
                             <Input addonBefore="+91" placeholder="Alternate Number" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -175,12 +175,12 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
                 </Row>
                 <Row gutter={24}>
                     <Col span={8}>
-                        <Form.Item name="dateOfJoining" label="Date of Joining">
+                        <Form.Item name="dateOfJoining" label="Date of Joining" rules={[{ required: true, message: 'Please select date of joining' }]}>
                             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="DD/MM/YYYY" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item name="status" label="Status" initialValue={true}>
+                        <Form.Item name="status" label="Status" initialValue={true} rules={[{ required: true, message: 'Please select status' }]}>
                             <Select disabled={readOnly}>
                                 <Option value={true}>Active</Option>
                                 <Option value={false}>InActive</Option>

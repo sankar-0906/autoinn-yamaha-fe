@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Row, Col, Typography, Button, Card, Empty, Pagination, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, UploadOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Select, Row, Col, Typography, Button, Card, Empty, Pagination, message, Upload, Image, Tabs, List, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, UploadOutlined, FilePdfOutlined, EyeOutlined, DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import { getManufacturers } from '../../api/manufacturer';
+import { uploadImage } from '../../api/upload';
 import styles from './VehicleMaster.module.css';
 
 const { Title } = Typography;
@@ -12,6 +13,13 @@ interface VehicleImage {
     color: string;
     code: string;
     url?: string;
+}
+
+interface VehicleFile {
+    id?: string;
+    name: string;
+    url: string;
+    fileType: string;
 }
 
 interface VehicleMasterModalProps {
@@ -27,18 +35,24 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
     const [form] = Form.useForm();
     const [manufacturers, setManufacturers] = useState<any[]>([]);
     const [images, setImages] = useState<VehicleImage[]>([]);
+    const [files, setFiles] = useState<VehicleFile[]>([]);
+    const [activeFileTab, setActiveFileTab] = useState<string>('Brochure');
     const [imageModalVisible, setImageModalVisible] = useState(false);
+    const [fileModalVisible, setFileModalVisible] = useState(false);
     const [uploadModalVisible, setUploadModalVisible] = useState(false);
+    const [fileUploadModalVisible, setFileUploadModalVisible] = useState(false);
     const [editingImage, setEditingImage] = useState<{ index: number; image: VehicleImage } | null>(null);
     const [imageForm] = Form.useForm();
+    const [fileForm] = Form.useForm();
     const [currentImagePage, setCurrentImagePage] = useState(1);
-    const imagesPerPage = 1;
+    const [uploading, setUploading] = useState(false);
+    const itemsPerPage = 1;
 
     useEffect(() => {
         const fetchManufacturers = async () => {
             try {
                 const res = await getManufacturers();
-                setManufacturers(res.data || []);
+                setManufacturers(res.data?.data || res.data || []);
             } catch (error) {
                 message.error('Failed to fetch manufacturers');
             }
@@ -51,9 +65,11 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
             if (initialValues) {
                 form.setFieldsValue(initialValues);
                 setImages(initialValues.images || []);
+                setFiles(initialValues.files || []);
             } else {
                 form.resetFields();
                 setImages([]);
+                setFiles([]);
             }
         }
     }, [open, initialValues, form]);
@@ -64,7 +80,7 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
             return;
         }
         form.validateFields().then(values => {
-            onSave({ ...values, images });
+            onSave({ ...values, images, files });
         });
     };
 
@@ -103,8 +119,47 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
         });
     };
 
+    const handleCustomUpload = async (file: any, type: 'image' | 'file') => {
+        const formData = new FormData();
+        formData.append('file', file);
+        setUploading(true);
+        try {
+            const res = await uploadImage(formData);
+            const url = res.data?.data?.url;
+            if (type === 'image') {
+                imageForm.setFieldsValue({ url });
+            } else {
+                fileForm.setFieldsValue({ url, name: file.name });
+            }
+            message.success('Uploaded successfully');
+        } catch (error) {
+            message.error('Upload failed');
+        } finally {
+            setUploading(false);
+        }
+        return false; // Prevent default upload
+    };
+
+    const handleSaveFile = () => {
+        fileForm.validateFields().then(values => {
+            const newFile: VehicleFile = {
+                ...values,
+                fileType: activeFileTab
+            };
+            setFiles([...files, newFile]);
+            setFileUploadModalVisible(false);
+            fileForm.resetFields();
+        });
+    };
+
+    const handleDeleteFile = (index: number, categoryFiles: VehicleFile[]) => {
+        const fileToDelete = categoryFiles[index];
+        const newFiles = files.filter(f => f !== fileToDelete);
+        setFiles(newFiles);
+    };
+
     const renderImageGallery = () => {
-        const startIndex = (currentImagePage - 1) * imagesPerPage;
+        const startIndex = (currentImagePage - 1) * itemsPerPage;
         const currentImage = images[startIndex];
 
         return (
@@ -117,9 +172,10 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                 ]}
                 width={800}
                 centered
+                zIndex={1001}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <Title level={4} style={{ margin: 0 }}>Vehicles</Title>
+                    <Title level={4} style={{ margin: 0 }}>Vehicle Images</Title>
                     {!readOnly && (
                         <Button type="primary" icon={<PlusOutlined />} onClick={handleAddImage} style={{ background: '#1a8a7a', borderColor: '#1a8a7a' }}>
                             Add
@@ -131,7 +187,7 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                     <div style={{ textAlign: 'center' }}>
                         <Card className={styles.galleryCard} bordered={false}>
                             {currentImage.url ? (
-                                <img src={currentImage.url} alt={currentImage.color} className={styles.imagePreview} />
+                                <Image src={currentImage.url} alt={currentImage.color} className={styles.imagePreview} style={{ maxHeight: 300, objectFit: 'contain' }} />
                             ) : (
                                 <div className={styles.imagePlaceholder}>
                                     <PictureOutlined />
@@ -139,23 +195,24 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                                 </div>
                             )}
                             <div style={{ textAlign: 'left', marginTop: 16 }}>
-                                <div style={{ fontSize: 18, fontWeight: 600 }}>Name: {currentImage.color}</div>
+                                <div style={{ fontSize: 18, fontWeight: 600 }}>Color: {currentImage.color}</div>
                                 <div style={{ color: '#666', marginTop: 4 }}>Code: {currentImage.code}</div>
                             </div>
                             {!readOnly && (
-                                <div className={styles.cardActions}>
-                                    <Button icon={<DeleteOutlined />} danger onClick={() => handleDeleteImage(startIndex)} />
-                                    <Button icon={<EditOutlined />} onClick={() => handleEditImage(startIndex)} />
+                                <div className={styles.cardActions} style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+                                    <Button icon={<DeleteOutlined />} danger onClick={() => handleDeleteImage(startIndex)}>Delete</Button>
+                                    <Button icon={<EditOutlined />} onClick={() => handleEditImage(startIndex)}>Edit</Button>
                                 </div>
                             )}
                         </Card>
                         <Pagination
                             current={currentImagePage}
                             total={images.length}
-                            pageSize={imagesPerPage}
+                            pageSize={itemsPerPage}
                             onChange={(page: number) => setCurrentImagePage(page)}
                             showSizeChanger={false}
                             simple
+                            style={{ marginTop: 16 }}
                         />
                     </div>
                 ) : (
@@ -165,24 +222,114 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
         );
     };
 
+    const renderFileGallery = () => {
+        const categories = ['Brochure', 'Parts Manual', 'Service Manual'];
+
+        return (
+            <Modal
+                title="Files"
+                open={fileModalVisible}
+                onCancel={() => setFileModalVisible(false)}
+                footer={[
+                    <Button key="close" onClick={() => setFileModalVisible(false)}>Close</Button>
+                ]}
+                width={700}
+                centered
+                zIndex={1001}
+            >
+                <Tabs
+                    activeKey={activeFileTab}
+                    onChange={setActiveFileTab}
+                    type="card"
+                    items={categories.map(cat => {
+                        const categoryFiles = files.filter(f => f.fileType === cat);
+                        return {
+                            key: cat,
+                            label: cat,
+                            children: (
+                                <div style={{ minHeight: 300, paddingTop: 16 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                                        {!readOnly && (
+                                            <Button type="primary" icon={<PlusOutlined />} onClick={() => {
+                                                fileForm.resetFields();
+                                                setFileUploadModalVisible(true);
+                                            }} style={{ background: '#1a8a7a', borderColor: '#1a8a7a' }}>
+                                                New
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <List
+                                        dataSource={categoryFiles}
+                                        locale={{ emptyText: <Empty description={`No ${cat} added yet`} /> }}
+                                        renderItem={(item, index) => (
+                                            <List.Item
+                                                actions={[
+                                                    <Button key="view" icon={<EyeOutlined />} type="link" onClick={() => window.open(item.url, '_blank')} />,
+                                                    !readOnly && (
+                                                        <Popconfirm
+                                                            key="delete"
+                                                            title="Delete this file?"
+                                                            onConfirm={() => handleDeleteFile(index, categoryFiles)}
+                                                        >
+                                                            <Button icon={<DeleteOutlined />} type="link" danger />
+                                                        </Popconfirm>
+                                                    )
+                                                ]}
+                                            >
+                                                <List.Item.Meta
+                                                    avatar={<FilePdfOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />}
+                                                    title={item.name}
+                                                    description={<Typography.Text type="secondary" style={{ fontSize: 12 }}>{item.url?.split('/').pop()}</Typography.Text>}
+                                                />
+                                            </List.Item>
+                                        )}
+                                    />
+                                </div>
+                            )
+                        };
+                    })}
+                />
+            </Modal>
+        );
+    };
+
+    const imageUrl = Form.useWatch('url', imageForm);
+
     const renderUploadModal = () => (
         <Modal
             title="Image Upload"
             open={uploadModalVisible}
             onCancel={() => setUploadModalVisible(false)}
             onOk={handleUploadImage}
-            okText="Upload"
+            okText={uploading ? "Uploading..." : "Upload"}
             cancelText="Cancel"
-            okButtonProps={{ style: { background: '#1a8a7a', borderColor: '#1a8a7a' } }}
+            okButtonProps={{
+                style: { background: '#1a8a7a', borderColor: '#1a8a7a' },
+                disabled: uploading
+            }}
             centered
+            zIndex={1002}
         >
             <Form form={imageForm} layout="vertical">
                 <Row gutter={16} align="middle">
                     <Col span={10}>
-                        <div className={styles.uploadDragger}>
-                            <UploadOutlined style={{ fontSize: 32, color: '#1a8a7a' }} />
-                            <div style={{ marginTop: 8 }}>Upload</div>
-                        </div>
+                        <Upload
+                            beforeUpload={(file) => handleCustomUpload(file, 'image')}
+                            showUploadList={false}
+                        >
+                            <div className={styles.uploadDragger}>
+                                {uploading ? (
+                                    <UploadOutlined spin style={{ fontSize: 32, color: '#1a8a7a' }} />
+                                ) : imageUrl ? (
+                                    <img src={imageUrl} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                ) : (
+                                    <>
+                                        <PlusOutlined style={{ fontSize: 32, color: '#1a8a7a' }} />
+                                        <div style={{ marginTop: 8 }}>Upload</div>
+                                    </>
+                                )}
+                            </div>
+                        </Upload>
                     </Col>
                     <Col span={14}>
                         <Form.Item name="color" label="Color Name" rules={[{ required: true, message: 'Required' }]}>
@@ -191,11 +338,43 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                         <Form.Item name="code" label="Color Code" rules={[{ required: true, message: 'Required' }]}>
                             <Input placeholder="Color Code" />
                         </Form.Item>
-                        <Form.Item name="url" label="Image URL (Optional)">
-                            <Input placeholder="https://..." />
+                        <Form.Item name="url" label="Image URL">
+                            <Input placeholder="Auto-populated on upload" readOnly />
                         </Form.Item>
                     </Col>
                 </Row>
+            </Form>
+        </Modal>
+    );
+
+    const renderFileUploadModal = () => (
+        <Modal
+            title={`${activeFileTab} Upload`}
+            open={fileUploadModalVisible}
+            onCancel={() => setFileUploadModalVisible(false)}
+            onOk={handleSaveFile}
+            okText="Save"
+            okButtonProps={{ disabled: uploading }}
+            centered
+            zIndex={1002}
+        >
+            <Form form={fileForm} layout="vertical">
+                <Form.Item name="name" label={`${activeFileTab} Name`} rules={[{ required: true, message: 'Required' }]}>
+                    <Input placeholder={`Enter ${activeFileTab} Name`} />
+                </Form.Item>
+                <Form.Item name="url" label={`${activeFileTab} URL`} rules={[{ required: true, message: 'Upload required' }]}>
+                    <Input placeholder="Paste URL or upload below" readOnly />
+                </Form.Item>
+                <div style={{ textAlign: 'center', marginTop: 16 }}>
+                    <Upload
+                        beforeUpload={(file) => handleCustomUpload(file, 'file')}
+                        showUploadList={false}
+                    >
+                        <Button icon={uploading ? <LoadingOutlined /> : <UploadOutlined />} loading={uploading}>
+                            {uploading ? 'Uploading...' : 'Choose File'}
+                        </Button>
+                    </Upload>
+                </div>
             </Form>
         </Modal>
     );
@@ -226,10 +405,10 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                         </Form.Item>
                         <Form.Item name="manufacturerId" label="Manufacturer Name" rules={[{ required: true, message: 'Required' }]}>
                             <Select placeholder="Select Manufacturer" disabled={readOnly}>
-                                {manufacturers.map(m => <Option key={m.id} value={m.id}>{m.name}</Option>)}
+                                {manufacturers.map((m: any) => <Option key={m.id} value={m.id}>{m.name}</Option>)}
                             </Select>
                         </Form.Item>
-                        <Form.Item name="modelCode" label="Model Code">
+                        <Form.Item name="modelCode" label="Model Code" rules={[{ required: true, message: 'Required' }]}>
                             <Input placeholder="e.g. BJH500" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -250,6 +429,9 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                             <Button icon={<PictureOutlined />} onClick={() => setImageModalVisible(true)}>
                                 Images ({images.length})
                             </Button>
+                            <Button icon={<FilePdfOutlined />} onClick={() => setFileModalVisible(true)}>
+                                Files ({files.length})
+                            </Button>
                         </div>
                     </Col>
                 </Row>
@@ -257,6 +439,8 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
 
             {renderImageGallery()}
             {renderUploadModal()}
+            {renderFileGallery()}
+            {renderFileUploadModal()}
         </Modal>
     );
 };

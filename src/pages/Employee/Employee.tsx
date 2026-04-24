@@ -114,6 +114,12 @@ const EmployeePage: React.FC = () => {
             render: (text: string) => text || '-'
         },
         {
+            title: 'Branch',
+            dataIndex: ['profile', 'branch'],
+            key: 'branch',
+            render: (branches: any[]) => branches?.map(b => b.name).join(', ') || '-'
+        },
+        {
             title: 'Department',
             dataIndex: ['profile', 'department', 'role'],
             key: 'department',

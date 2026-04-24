@@ -113,6 +113,18 @@ const Navigation: React.FC = () => {
                     label: <Link to="/company/vehicle-stock-inward">Vehicle Stock Inward</Link>
                 },
             ]
+        },
+        {
+            key: 'inventory',
+            icon: <DashboardOutlined />,
+            label: 'Inventory Management',
+            children: [
+                {
+                    key: '/company/vehicle-inventory',
+                    icon: <FileAddOutlined />,
+                    label: <Link to="/company/vehicle-inventory">Vehicle Inventory</Link>
+                }
+            ]
         }
     ];
 

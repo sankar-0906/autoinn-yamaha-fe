@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
-    Modal, Upload, Button, message, Form, Input, Row, Col, Table, Typography, DatePicker
+    Modal, Upload, Button, message, Form, Input, Row, Col, Table, Typography, DatePicker, Select
 } from 'antd';
-import { InboxOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
-import { processInwardPdf, createVehicleStockInward, updateVehicleStockInward } from '../../../api/vehicleStockInward';
+import { InboxOutlined, SaveOutlined, EditOutlined, PictureOutlined } from '@ant-design/icons';
+import { processInwardPdf, createVehicleStockInward, updateVehicleStockInward, lookupVehicleImage } from '../../../api/vehicleStockInward';
+import { getUniqueModels, getColorsByModel } from '../../../api/vehicleMaster';
 import dayjs from 'dayjs';
 import styles from '../VehicleStockInward.module.css';
 
@@ -28,9 +29,23 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
         dataIndex: string;
     } | null>(null);
     const [form] = Form.useForm();
+    const [availableModels, setAvailableModels] = useState<string[]>([]);
+    const [rowColors, setRowColors] = useState<Record<number, any[]>>({});
 
     const isViewOnly = mode === 'view';
     const isEditMode = mode === 'edit';
+
+    React.useEffect(() => {
+        const fetchMetadata = async () => {
+            try {
+                const res = await getUniqueModels();
+                setAvailableModels(res.data?.data || []);
+            } catch (error) {
+                console.error('Failed to fetch models', error);
+            }
+        };
+        fetchMetadata();
+    }, []);
 
     React.useEffect(() => {
         const processInitialData = async () => {
@@ -42,7 +57,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                 console.log('initialData.items:', initialData.items);
                 console.log('initialData.VEHICLES:', initialData.VEHICLES);
                 console.log('initialData.lineItems:', initialData.lineItems);
-                
+
                 // Check for both legacy items and new VEHICLES array
                 let vehiclesData = [];
                 if (initialData.VEHICLES && Array.isArray(initialData.VEHICLES) && initialData.VEHICLES.length > 0) {
@@ -51,7 +66,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                 } else if (initialData.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
                     // Transform legacy items with dynamic data recovery from API
                     console.log('Using items array (legacy format) - calling recovery API...');
-                    
+
                     // Call the dynamic recovery API
                     try {
                         const recoveryResponse = await fetch('/api/vehicle-stock-inward/recover-data', {
@@ -63,7 +78,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                                 vehicles: initialData.items
                             })
                         });
-                        
+
                         if (recoveryResponse.ok) {
                             const recoveryResult = await recoveryResponse.json();
                             if (recoveryResult.success) {
@@ -99,12 +114,12 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                             colorCode: item.image?.code || 'UNKNOWN'
                         }));
                     }
-                    
+
                     console.log('Using items array (legacy format) - transformed with dynamic recovery');
                 } else {
                     console.log('No vehicle data found!');
                 }
-                
+
                 // Group vehicles by model code to calculate proper quantities (works for both formats)
                 const groupedVehicles = vehiclesData.reduce((groups: any, vehicle: any) => {
                     const modelCode = vehicle.modelCode;
@@ -119,21 +134,21 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                     groups[modelCode].vehicles.push(vehicle);
                     return groups;
                 }, {});
-                
+
                 // Convert back to flat array with correct quantities
-                const finalVehiclesData = Object.values(groupedVehicles).flatMap((group: any) => 
+                const finalVehiclesData = Object.values(groupedVehicles).flatMap((group: any) =>
                     group.vehicles.map((vehicle: any) => ({
                         ...vehicle,
                         qty: group.qty // Set the same quantity for all vehicles in the group
                     }))
                 );
-                
+
                 console.log('=== DEBUG: Quantity Grouping ===');
                 Object.values(groupedVehicles).forEach((group: any) => {
                     console.log(`Model ${group.modelCode}: ${group.qty} vehicles`);
                 });
                 console.log('=== END GROUPING DEBUG ===');
-                
+
                 console.log('Final vehiclesData:', finalVehiclesData);
                 console.log('=== DEBUG: Vehicle Data Details ===');
                 finalVehiclesData.forEach((vehicle: any, index: number) => {
@@ -150,10 +165,10 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                     console.log(`  image:`, vehicle.image);
                     console.log(`---`);
                 });
-                
+
                 vehiclesData = finalVehiclesData;
                 console.log('=== END DEBUG ===');
-                
+
                 setExtractedData({ "VEHICLES": vehiclesData });
                 form.setFieldsValue({
                     ...initialData,
@@ -174,15 +189,43 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
 
     const handleFileUpload = async (file: File) => {
         setLoading(true);
-        setProcessingStep('AI Vision Analysis started...');
+        setProcessingStep('Initializing document processing...');
         try {
-            setProcessingStep('Rendering Document Image...');
+            setProcessingStep('Extracting data via OCR...');
             const res = await processInwardPdf(file);
-            setProcessingStep('AI Extraction with Claude...');
 
             if (res.data.success) {
                 const data = res.data.data;
                 console.log("Extracted Data:", data);
+
+                // Autofill and parse model codes
+                if (data["VEHICLES"]) {
+                    data["VEHICLES"] = await Promise.all(data["VEHICLES"].map(async (v: any, index: number) => {
+                        let modelCode = v.modelCode || '';
+                        let colorCode = v.colorCode || '';
+                        let imageUrl = v.imageUrl || '';
+
+                        // Parse combined format MODEL-COLOR
+                        if (modelCode.includes('-')) {
+                            const parts = modelCode.split('-');
+                            modelCode = parts[0];
+                            if (!colorCode) colorCode = parts[1] || '';
+                        }
+
+                        // Try to trigger initial image lookup for the fetched data
+                        if (modelCode && colorCode) {
+                            try {
+                                const imgRes = await lookupVehicleImage(modelCode, colorCode);
+                                imageUrl = imgRes.data?.data || '';
+                            } catch (e) {
+                                console.error('Initial image lookup failed', e);
+                            }
+                        }
+
+                        return { ...v, modelCode, colorCode, imageUrl };
+                    }));
+                }
+
                 setExtractedData(data);
 
                 // Helper to parse dates like "31-Jan-2026" or "31-01-2026"
@@ -213,11 +256,11 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                     to: data["TO"],
                     insuranceCo: data["INSURANCE CO"]
                 });
-                message.success('AI Vision Extraction successful! Please verify the data.');
+                message.success('Data extraction successful! Please verify the results.');
             }
         } catch (err: any) {
             console.error('Frontend PDF Error:', err);
-            message.error(err.response?.data?.message || 'AI Extraction failed. Please check your API key.');
+            message.error(err.response?.data?.message || 'Data extraction failed.');
         } finally {
             setLoading(false);
             setProcessingStep('');
@@ -251,7 +294,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
         } catch (err: any) {
             const errorMessage = err.response?.data?.message || 'Action failed';
             const isDuplicate = err.response?.data?.isDuplicate;
-            
+
             if (isDuplicate) {
                 message.error('Inward record already exists');
             } else {
@@ -263,13 +306,33 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
         }
     };
 
-    const handleCellChange = (value: string, rowIndex: number, dataIndex: string) => {
+    const handleCellChange = async (value: string, rowIndex: number, dataIndex: string) => {
+        const upperValue = value?.toUpperCase() || '';
         const updated = [...extractedData["VEHICLES"]];
-        updated[rowIndex] = {
-            ...updated[rowIndex],
-            [dataIndex]: value
-        };
+        const row = { ...updated[rowIndex], [dataIndex]: upperValue };
 
+        // If model changes, clear color and fetch new color list
+        if (dataIndex === 'modelCode') {
+            row.colorCode = ''; // Reset color
+            try {
+                const colorRes = await getColorsByModel(value);
+                setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: colorRes.data?.data || [] }));
+            } catch (e) {
+                console.error('Failed to fetch colors for row', rowIndex, e);
+            }
+        }
+
+        // Trigger image lookup if either model or color changes
+        if ((dataIndex === 'modelCode' || dataIndex === 'colorCode') && row.modelCode) {
+            try {
+                const imgRes = await lookupVehicleImage(row.modelCode, row.colorCode);
+                row.imageUrl = imgRes.data?.data || '';
+            } catch (e) {
+                console.error('Dynamic image lookup failed', e);
+            }
+        }
+
+        updated[rowIndex] = row;
         setExtractedData({
             ...extractedData,
             VEHICLES: updated
@@ -290,7 +353,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                 console.log(`Value for ${dataIndex}:`, record[dataIndex]);
                 console.log(`=== END RENDER DEBUG ===`);
             }
-            
+
             const isEditing =
                 editingCell?.rowIndex === rowIndex &&
                 editingCell?.dataIndex === dataIndex;
@@ -307,6 +370,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                         handleCellChange((e.target as any).value, rowIndex, dataIndex);
                         setEditingCell(null);
                     }}
+                    style={{ textTransform: 'uppercase' }}
                 />
             ) : (
                 <div
@@ -322,11 +386,69 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
     });
 
     const vehicleColumns = [
-        getEditableColumn('Model Code', 'modelCode'),
+        {
+            title: 'Image',
+            key: 'image',
+            width: 80,
+            render: (record: any) => record.imageUrl ? (
+                <img src={record.imageUrl} alt="Vehicle" style={{ width: 60, height: 40, objectFit: 'contain', borderRadius: 4 }} />
+            ) : (
+                <div style={{ width: 60, height: 40, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
+                    <PictureOutlined style={{ color: '#ccc' }} />
+                </div>
+            )
+        },
+        {
+            title: 'Model Code',
+            dataIndex: 'modelCode',
+            key: 'modelCode',
+            width: 200,
+            render: (text: string, record: any, rowIndex: number) => (
+                <Select
+                    showSearch
+                    className={styles.uppercaseSearch}
+                    style={{ width: '100%' }}
+                    value={text}
+                    disabled={isViewOnly}
+                    onChange={(val) => handleCellChange(val, rowIndex, 'modelCode')}
+                    options={availableModels.map((m: string) => ({ label: m.toUpperCase(), value: m.toUpperCase() }))}
+                    optionFilterProp="label"
+                />
+            )
+        },
         getEditableColumn('Qty', 'qty'),
         getEditableColumn('Chassis No', 'chassisNo'),
         getEditableColumn('Engine No', 'engineNo'),
-        getEditableColumn('Color', 'colorCode'),
+        {
+            title: 'Color',
+            dataIndex: 'colorCode',
+            key: 'colorCode',
+            width: 150,
+            render: (text: string, record: any, rowIndex: number) => {
+                const colors = rowColors[rowIndex] || [];
+                return (
+                    <Select
+                        className={styles.uppercaseSearch}
+                        style={{ width: '100%' }}
+                        value={text}
+                        disabled={isViewOnly || !record.modelCode}
+                        onChange={(val) => handleCellChange(val, rowIndex, 'colorCode')}
+                        onFocus={async () => {
+                            if (record.modelCode && (!colors || colors.length === 0)) {
+                                try {
+                                    const res = await getColorsByModel(record.modelCode);
+                                    setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: res.data?.data || [] }));
+                                } catch (e) {
+                                    console.error('OnFocus colors fetch failed', e);
+                                }
+                            }
+                        }}
+                        options={colors.map((c: any) => ({ label: c.code.toUpperCase(), value: c.code.toUpperCase() }))}
+                        optionFilterProp="label"
+                    />
+                );
+            }
+        },
     ];
 
     const getModalTitle = () => {

@@ -1,11 +1,8 @@
 import React, { useState } from "react";
-import { Steps, Modal } from "antd";
+import { Modal } from "antd";
 import _ from "lodash";
-import AccountDetails from "./AccountDetails";
 import BranchDetails from "./BranchDetails";
 import "./index.less";
-
-const { Step } = Steps;
 
 export default function CompanyBranchForm(props) {
   const {
@@ -20,10 +17,6 @@ export default function CompanyBranchForm(props) {
     setEditable,
     modifyType,
     view,
-    // setDelData,
-    // delData,
-    // setBankDelData,
-    // delbankData
   } = props;
   const [confirmLoading] = useState(false);
   const { current, setCurrent } = props;
@@ -33,50 +26,6 @@ export default function CompanyBranchForm(props) {
 
   const [delData, setDelData] = useState([]);
   const [delbankData, setBankDelData] = useState([]);
-  const steps = [
-    {
-      title: "Location Data",
-      content: (
-        <BranchDetails
-          current={current}
-          setCurrent={setCurrent}
-          editable={editable}
-          toClearFields={toClearFields}
-          setClearFields={setClearFields}
-          values={values}
-          setValues={setValues}
-          setModifiedData={setModifiedData}
-          view={view}
-          setDelData={setDelData}
-          delData={delData}
-        />
-      )
-    },
-    {
-      title: "Bank Data",
-      content: (
-        <AccountDetails
-          current={current}
-          setCurrent={setCurrent}
-          editable={editable}
-          setBranch={setBranch}
-          toClearFields={toClearFields}
-          setClearFields={setClearFields}
-          values={values}
-          setValues={setValues}
-          setVisible={setVisible}
-          setDataSource={setDataSource}
-          dataSource={dataSource}
-          setTableLoading={setTableLoading}
-          setEditable={setEditable}
-          modifyType={modifyType}
-          setBankDelData={setBankDelData}
-          delbankData={delbankData}
-          delData={delData}
-        />
-      )
-    }
-  ];
 
   return (
     <div>
@@ -97,18 +46,28 @@ export default function CompanyBranchForm(props) {
         width="75%"
         confirmLoading={confirmLoading}
       >
-        <Steps
-          current={current}
-          size="small"
-          style={{ width: "70%", marginLeft: "15%" }}
-        >
-          {steps.map(item => (
-            <Step key={item.title} title={item.title} />
-          ))}
-        </Steps>
-        <div style={{ margin: "1rem" }}>{steps[current].content}</div>
-
-        <div></div>
+        <div style={{ margin: "1rem" }}>
+          <BranchDetails
+            current={current}
+            setCurrent={setCurrent}
+            editable={editable}
+            toClearFields={toClearFields}
+            setClearFields={setClearFields}
+            values={values}
+            setValues={setValues}
+            setModifiedData={setModifiedData}
+            view={view}
+            setDelData={setDelData}
+            delData={delData}
+            setVisible={setVisible}
+            setDataSource={setDataSource}
+            setTableLoading={setTableLoading}
+            modifyType={modifyType}
+            dataSource={dataSource}
+            setBankDelData={setBankDelData}
+            delbankData={delbankData}
+          />
+        </div>
       </Modal>
     </div>
   );

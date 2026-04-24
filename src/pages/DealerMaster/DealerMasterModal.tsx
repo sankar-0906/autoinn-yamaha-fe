@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Select, Row, Col, Typography, Button, message } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { getCountries, getStates, getCities } from '../../api/location';
+import { getBranches } from '../../api/branch';
+import { verifyGST } from '../../api/gstVerify';
 import styles from './DealerMaster.module.css';
 
 const { Title, Text } = Typography;
@@ -21,25 +23,75 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
     const [countries, setCountries] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
+    const [branches, setBranches] = useState<any[]>([]);
+    const [gstName, setGstName] = useState('');
+    const [gstStatus, setGstStatus] = useState('');
 
     useEffect(() => {
         const fetchCountries = async () => {
             try {
                 const res = await getCountries();
                 setCountries(res.data?.data || res.data || []);
+            } catch (error) { }
+        };
+        const fetchBranches = async () => {
+            try {
+                const res = await getBranches();
+                // Extract from result.branch as per backend structure
+                const fetchedBranches = res.data?.data?.branch || res.data?.branch || res.data?.data || res.data || [];
+                setBranches(Array.isArray(fetchedBranches) ? fetchedBranches : []);
             } catch (error) {
-                // message.error('Failed to fetch countries');
+                setBranches([]);
             }
         };
         fetchCountries();
+        fetchBranches();
     }, []);
 
     useEffect(() => {
         if (open) {
             if (initialValues) {
-                form.setFieldsValue(initialValues);
-                if (initialValues.address?.countryId) handleCountryChange(initialValues.address.countryId, 'billing');
-                if (initialValues.address?.stateId) handleStateChange(initialValues.address.stateId, 'billing');
+                // Map shippingAddresses to shippingAddress for form compatibility
+                const shippingArr = initialValues.shippingAddresses || initialValues.shippingAddress || [];
+                const values = {
+                    ...initialValues,
+                    shippingAddress: shippingArr
+                };
+                form.setFieldsValue(values);
+                setGstName('');
+                setGstStatus('');
+
+                // Pre-fetch all location data for all addresses
+                const preFetchData = async () => {
+                    const allAddresses = [initialValues.address, ...shippingArr].filter(Boolean);
+                    const countryIds = [...new Set(allAddresses.map(a => a.countryId).filter(Boolean))];
+                    const stateIds = [...new Set(allAddresses.map(a => a.stateId).filter(Boolean))];
+
+                    // Fetch states for all used countries
+                    for (const cid of countryIds) {
+                        try {
+                            const res = await getStates(cid);
+                            const newStates = res.data?.data || res.data || [];
+                            setStates(prev => {
+                                const existingIds = prev.map(s => s.id);
+                                return [...prev, ...newStates.filter((s: any) => !existingIds.includes(s.id))];
+                            });
+                        } catch (e) { }
+                    }
+
+                    // Fetch cities for all used states
+                    for (const sid of stateIds) {
+                        try {
+                            const res = await getCities(sid);
+                            const newCities = res.data?.data || res.data || [];
+                            setCities(prev => {
+                                const existingIds = prev.map(c => c.id);
+                                return [...prev, ...newCities.filter((c: any) => !existingIds.includes(c.id))];
+                            });
+                        } catch (e) { }
+                    }
+                };
+                preFetchData();
             } else {
                 form.resetFields();
             }
@@ -49,7 +101,12 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
     const handleCountryChange = async (value: string, type: 'billing' | number) => {
         try {
             const res = await getStates(value);
-            setStates(res.data?.data || res.data || []);
+            const newStates = res.data?.data || res.data || [];
+            setStates(prev => {
+                const existingIds = prev.map(s => s.id);
+                return [...prev, ...newStates.filter((s: any) => !existingIds.includes(s.id))];
+            });
+
             if (type === 'billing') {
                 form.setFieldsValue({ address: { stateId: undefined, cityId: undefined } });
             } else if (typeof type === 'number') {
@@ -61,15 +118,18 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                 };
                 form.setFieldsValue({ shippingAddress });
             }
-        } catch (error) {
-            // message.error('Failed to fetch states');
-        }
+        } catch (error) { }
     };
 
     const handleStateChange = async (value: string, type: 'billing' | number) => {
         try {
             const res = await getCities(value);
-            setCities(res.data?.data || res.data || []);
+            const newCities = res.data?.data || res.data || [];
+            setCities(prev => {
+                const existingIds = prev.map(c => c.id);
+                return [...prev, ...newCities.filter((c: any) => !existingIds.includes(c.id))];
+            });
+
             if (type === 'billing') {
                 form.setFieldsValue({ address: { cityId: undefined } });
             } else if (typeof type === 'number') {
@@ -80,8 +140,39 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                 };
                 form.setFieldsValue({ shippingAddress });
             }
-        } catch (error) {
-            // message.error('Failed to fetch cities');
+        } catch (error) { }
+    };
+
+    const handleGstChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value.toUpperCase();
+        form.setFieldsValue({ GSTIN: val });
+
+        if (val.length === 15) {
+            try {
+                const res = await verifyGST(val);
+                const { data } = res;
+                if (data.code === 200 && data.response?.code === 200) {
+                    const gstData = data.response.data.data;
+                    if (gstData.error) {
+                        message.error('Invalid GST Number');
+                        setGstName('');
+                        setGstStatus('');
+                    } else {
+                        message.success('GST Verified');
+                        setGstName(gstData.taxpayerInfo?.tradeNam || gstData.taxpayerInfo?.lgnm || '');
+                        setGstStatus(gstData.taxpayerInfo?.sts || '');
+                    }
+                } else {
+                    setGstName('');
+                    setGstStatus('');
+                }
+            } catch (error) {
+                setGstName('');
+                setGstStatus('');
+            }
+        } else {
+            setGstName('');
+            setGstStatus('');
         }
     };
 
@@ -147,8 +238,22 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                     </Col>
                     <Col span={12}>
                         <Form.Item name="GSTIN" label={<span className={styles.formLabel}>GSTIN</span>}>
-                            <Input placeholder="Enter GSTIN" disabled={readOnly} />
+                            <Input
+                                placeholder="Enter GSTIN"
+                                disabled={readOnly}
+                                maxLength={15}
+                                onChange={handleGstChange}
+                                style={{ textTransform: 'uppercase' }}
+                            />
                         </Form.Item>
+                        {gstName && (
+                            <div style={{ marginTop: '-20px', marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
+                                <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '4px' }} />
+                                <span style={{ color: '#52c41a', fontSize: '12px' }}>
+                                    {gstName} ({gstStatus})
+                                </span>
+                            </div>
+                        )}
                     </Col>
                 </Row>
 
@@ -244,35 +349,44 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                         </Col>
                                     </Row>
                                     <Row gutter={24}>
-                                        <Col span={12}>
+                                        <Col span={8}>
                                             <Form.Item {...restField} name={[name, 'locality']} label={<span className={styles.formLabel}>Locality</span>} rules={[{ required: true }]}>
                                                 <Input placeholder="Locality" disabled={readOnly} />
                                             </Form.Item>
                                         </Col>
-                                        <Col span={6}>
+                                        <Col span={8}>
+                                            <Form.Item {...restField} name={[name, 'pincode']} label={<span className={styles.formLabel}>Pincode</span>} rules={[{ required: true }]}>
+                                                <Input placeholder="Pincode" disabled={readOnly} />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={8}>
+                                            <Form.Item {...restField} name={[name, 'branchId']} label={<span className={styles.formLabel}>Link Branch</span>}>
+                                                <Select placeholder="Select Branch" disabled={readOnly} allowClear style={{ width: '100%' }}>
+                                                    {branches.map(b => <Option key={b.id} value={b.id}>{b.name}</Option>)}
+                                                </Select>
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                    <Row gutter={24}>
+                                        <Col span={8}>
                                             <Form.Item {...restField} name={[name, 'countryId']} label={<span className={styles.formLabel}>Country</span>}>
                                                 <Select placeholder="Select" disabled={readOnly} allowClear onChange={(v) => handleCountryChange(v, name)}>
                                                     {countries.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
                                                 </Select>
                                             </Form.Item>
                                         </Col>
-                                        <Col span={6}>
+                                        <Col span={8}>
                                             <Form.Item {...restField} name={[name, 'stateId']} label={<span className={styles.formLabel}>State</span>}>
                                                 <Select placeholder="Select" disabled={readOnly} allowClear onChange={(v) => handleStateChange(v, name)}>
                                                     {states.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}
                                                 </Select>
                                             </Form.Item>
                                         </Col>
-                                        <Col span={6}>
+                                        <Col span={8}>
                                             <Form.Item {...restField} name={[name, 'cityId']} label={<span className={styles.formLabel}>City</span>}>
                                                 <Select placeholder="Select" disabled={readOnly} allowClear>
                                                     {cities.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
                                                 </Select>
-                                            </Form.Item>
-                                        </Col>
-                                        <Col span={6}>
-                                            <Form.Item {...restField} name={[name, 'pincode']} label={<span className={styles.formLabel}>Pincode</span>} rules={[{ required: true }]}>
-                                                <Input placeholder="Pincode" disabled={readOnly} />
                                             </Form.Item>
                                         </Col>
                                     </Row>

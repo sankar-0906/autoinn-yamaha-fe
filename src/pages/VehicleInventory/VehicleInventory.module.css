@@ -1,0 +1,233 @@
+.pageContainer {
+    padding: 24px;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #6c7a89;
+    padding: 12px 24px;
+    border-bottom: 2px solid #5a6a7a;
+    margin-bottom: 0;
+}
+
+.title {
+    margin: 0 !important;
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    color: white !important;
+}
+
+.topSummary {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.totalCost {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.statsRow {
+    margin-bottom: 32px;
+}
+
+.statCard {
+    height: 100%;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+}
+
+.statCard:hover {
+    transform: translateY(-5px);
+}
+
+.totalCard {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+}
+
+.dealerCard {
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+    color: white;
+}
+
+.categoryCard {
+    background: white;
+    border: 1px solid #e2e8f0;
+}
+
+.statValue {
+    font-size: 32px;
+    font-weight: 800;
+    margin-top: 8px;
+    display: block;
+}
+
+.statLabel {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tableCard {
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    background: white;
+    padding: 0;
+}
+
+:global(.ant-table-thead > tr > th) {
+    background: #6c7a89 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 13px;
+    padding: 12px 16px !important;
+    border-bottom: none !important;
+}
+
+.alternateRow {
+    background-color: #f1f3f5;
+}
+
+.inventoryRow td {
+    padding: 16px 16px !important;
+}
+
+.viewLink {
+    color: #0d9488;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.viewLink:hover {
+    color: #0f766e;
+}
+
+.vehicleId {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.categoryTag {
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.quantityBadge {
+    background: #f1f5f9;
+    color: #1e293b;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.actionBtn {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.colorPreview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.colorDot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+}
+
+@media (max-width: 768px) {
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* Modal Styles */
+.countModal :global(.ant-modal-header) {
+    background: #6c7a89;
+    padding: 10px 24px;
+    margin: 0;
+    border-radius: 8px 8px 0 0;
+}
+
+.countModal :global(.ant-modal-close) {
+    color: white !important;
+    top: 25px !important;
+    right: 30px !important;
+}
+
+.countModal :global(.ant-modal-close:hover) {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.modalHeaderTitle {
+    color: white !important;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.sectionTitle {
+    color: #64748b !important;
+    margin-bottom: 12px !important;
+}
+
+.countTable :global(.ant-table-thead > tr > th) {
+    background: #6c7a89 !important;
+    color: white !important;
+}
+
+.detailFormSection {
+    padding: 24px;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.fieldLabel {
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.detailField {
+    margin-bottom: 24px;
+}
+
+.fieldValue {
+    padding: 6px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.detailImage {
+    max-height: 220px;
+    object-fit: contain;
+}

@@ -114,9 +114,9 @@ const DealerMasterPage: React.FC = () => {
         },
         {
             title: 'City',
-            dataIndex: ['address', 'cityId'],
+            dataIndex: ['address', 'district', 'name'],
             key: 'city',
-            render: (city: string) => city || '-'
+            render: (city: string, record: any) => city || record.address?.locality || '-'
         },
         {
             title: 'GST Dealer Type',

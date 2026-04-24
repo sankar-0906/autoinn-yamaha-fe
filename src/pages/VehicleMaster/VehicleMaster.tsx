@@ -23,7 +23,7 @@ const VehicleMasterPage: React.FC = () => {
         setLoading(true);
         try {
             const res = await getVehicles();
-            setVehicles(res.data?.data || res.data || []);
+            setVehicles(res.data?.response?.data?.VehicleMaster || res.data?.data || res.data || []);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch vehicles');
         } finally {

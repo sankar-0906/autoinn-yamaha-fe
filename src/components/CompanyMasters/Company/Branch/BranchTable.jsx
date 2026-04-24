@@ -20,12 +20,6 @@ const BranchTable = (props) => {
             render: (text) => <span>{text || 0}</span>,
         },
         {
-            title: "Branch Type",
-            dataIndex: "branchType",
-            key: "branchType",
-            render: (text) => <span>{text}</span>,
-        },
-        {
             title: "Action",
             key: "action",
             render: (data) => (

@@ -1,0 +1,586 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Upload, Button, message, Form, Input, Row, Col, Table, Typography, DatePicker, Space, Card, Spin, Select
+} from 'antd';
+import { InboxOutlined, SaveOutlined, EditOutlined, ArrowLeftOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { processInwardPdf, createVehicleStockInward, updateVehicleStockInward, getVehicleStockInwardById, lookupVehicleImage } from '../../api/vehicleStockInward';
+import { getUniqueModels, getColorsByModel } from '../../api/vehicleMaster';
+import dayjs from 'dayjs';
+import styles from './VehicleStockInward.module.css';
+
+const { Dragger } = Upload;
+const { Title, Text } = Typography;
+
+const InwardImportPage: React.FC = () => {
+    const { id } = useParams<{ id?: string }>();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [form] = Form.useForm();
+
+    const [loading, setLoading] = useState(false);
+    const [extractedData, setExtractedData] = useState<any>(null);
+    const [processingStep, setProcessingStep] = useState<string>('');
+    const [availableModels, setAvailableModels] = useState<string[]>([]);
+    const [rowColors, setRowColors] = useState<Record<number, any[]>>({});
+
+    // Determine mode based on URL
+    const isEditMode = location.pathname.includes('/edit/');
+    const isViewOnly = location.pathname.includes('/view/');
+
+    const fetchData = async () => {
+        if (id) {
+            setLoading(true);
+            try {
+                const res = await getVehicleStockInwardById(id);
+                if (res.data.success) {
+                    const initialData = res.data.data;
+
+                    // Check for both legacy items and new VEHICLES array
+                    let vehiclesData = [];
+                    if (initialData.VEHICLES && Array.isArray(initialData.VEHICLES) && initialData.VEHICLES.length > 0) {
+                        vehiclesData = initialData.VEHICLES;
+                    } else if (initialData.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
+                        // Try dynamic recovery for legacy data
+                        try {
+                            const recoveryResponse = await fetch('/api/vehicle-stock-inward/recover-data', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ vehicles: initialData.items })
+                            });
+
+                            if (recoveryResponse.ok) {
+                                const recoveryResult = await recoveryResponse.json();
+                                if (recoveryResult.success) {
+                                    vehiclesData = recoveryResult.data;
+                                } else {
+                                    vehiclesData = initialData.items.map((item: any) => ({
+                                        ...item,
+                                        modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
+                                        qty: 1,
+                                        colorCode: item.image?.code || 'UNKNOWN'
+                                    }));
+                                }
+                            } else {
+                                vehiclesData = initialData.items.map((item: any) => ({
+                                    ...item,
+                                    modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
+                                    qty: 1,
+                                    colorCode: item.image?.code || 'UNKNOWN'
+                                }));
+                            }
+                        } catch (error) {
+                            vehiclesData = initialData.items.map((item: any) => ({
+                                ...item,
+                                modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
+                                qty: 1,
+                                colorCode: item.image?.code || 'UNKNOWN'
+                            }));
+                        }
+                    }
+
+                    // Group vehicles by model code to calculate proper quantities
+                    const groupedVehicles = vehiclesData.reduce((groups: any, vehicle: any) => {
+                        const modelCode = vehicle.modelCode;
+                        if (!groups[modelCode]) {
+                            groups[modelCode] = { modelCode, qty: 0, vehicles: [] };
+                        }
+                        groups[modelCode].qty += 1;
+                        groups[modelCode].vehicles.push(vehicle);
+                        return groups;
+                    }, {});
+
+                    const finalVehiclesData = await Promise.all(Object.values(groupedVehicles).flatMap((group: any) =>
+                        group.vehicles.map(async (vehicle: any) => {
+                            let modelCode = vehicle.modelCode || '';
+                            let colorCode = vehicle.colorCode || '';
+                            let imageUrl = vehicle.imageUrl;
+
+                            if (modelCode.includes('-')) {
+                                [modelCode, colorCode] = modelCode.split('-');
+                            }
+
+                            if (modelCode && colorCode && !imageUrl) {
+                                try {
+                                    const res = await lookupVehicleImage(modelCode, colorCode);
+                                    imageUrl = res.data?.data || '';
+                                } catch (e) { }
+                            }
+
+                            return {
+                                ...vehicle,
+                                modelCode,
+                                colorCode,
+                                qty: group.qty,
+                                imageUrl
+                            };
+                        })
+                    ));
+
+                    setExtractedData({ "VEHICLES": finalVehiclesData });
+                    form.setFieldsValue({
+                        ...initialData,
+                        date: initialData.date ? dayjs(initialData.date) : null,
+                        daDate: initialData.daDate ? dayjs(initialData.daDate) : null,
+                    });
+                }
+            } catch (err) {
+                message.error('Failed to fetch record details');
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    useEffect(() => {
+        const fetchMetadata = async () => {
+            try {
+                const res = await getUniqueModels();
+                setAvailableModels(res.data?.data || []);
+            } catch (error) {
+                console.error('Failed to fetch models', error);
+            }
+        };
+        fetchMetadata();
+        fetchData();
+    }, [id, form]);
+
+    // NEW: Dynamic image lookup effect
+    useEffect(() => {
+        const fetchMissingImages = async () => {
+            if (extractedData?.VEHICLES) {
+                let changed = false;
+                const newVehicles = [...extractedData.VEHICLES];
+
+                for (let i = 0; i < newVehicles.length; i++) {
+                    const v = newVehicles[i];
+                    // If we have model+color but no image loaded (not even 'NONE')
+                    if (v.modelCode && v.colorCode && v.imageUrl === undefined) {
+                        console.log(`[FRONTEND-LOOKUP] Looking up image for ${v.modelCode} / ${v.colorCode}`);
+                        try {
+                            const res = await lookupVehicleImage(v.modelCode, v.colorCode);
+                            if (res.data.success && res.data.data) {
+                                console.log(`[FRONTEND-LOOKUP] Found: ${res.data.data}`);
+                                newVehicles[i].imageUrl = res.data.data;
+                            } else {
+                                console.log(`[FRONTEND-LOOKUP] No image found for ${v.modelCode} / ${v.colorCode}`);
+                                newVehicles[i].imageUrl = 'NONE';
+                            }
+                            changed = true;
+                        } catch (err) {
+                            newVehicles[i].imageUrl = 'NONE';
+                            changed = true;
+                        }
+                    }
+                }
+
+                if (changed) {
+                    setExtractedData({ ...extractedData, VEHICLES: newVehicles });
+                }
+            }
+        };
+
+        fetchMissingImages();
+    }, [extractedData?.VEHICLES]);
+
+    const handleFileUpload = async (file: File) => {
+        setLoading(true);
+        setProcessingStep('Initializing document processing...');
+        try {
+            setProcessingStep('Extracting data via OCR...');
+            const res = await processInwardPdf(file);
+
+            if (res.data.success) {
+                const data = res.data.data;
+
+                // Autofill and parse model codes
+                if (data["VEHICLES"]) {
+                    data["VEHICLES"] = await Promise.all(data["VEHICLES"].map(async (v: any) => {
+                        let modelCode = v.modelCode || '';
+                        let colorCode = v.colorCode || '';
+                        let imageUrl = v.imageUrl || '';
+
+                        // Parse combined format MODEL-COLOR
+                        if (modelCode.includes('-')) {
+                            const parts = modelCode.split('-');
+                            modelCode = parts[0];
+                            if (!colorCode) colorCode = parts[1] || '';
+                        }
+
+                        // Try to trigger initial image lookup for the fetched data
+                        if (modelCode && colorCode) {
+                            try {
+                                const imgRes = await lookupVehicleImage(modelCode, colorCode);
+                                imageUrl = imgRes.data?.data || '';
+                            } catch (e) {
+                                console.error('Initial image lookup failed', e);
+                            }
+                        }
+
+                        return { ...v, modelCode, colorCode, imageUrl };
+                    }));
+                }
+
+                setExtractedData(data);
+
+                const parseDate = (d: string) => {
+                    if (!d) return null;
+                    let parsed = dayjs(d, 'DD-MM-YYYY');
+                    if (parsed.isValid()) return parsed;
+                    parsed = dayjs(d, 'DD-MMM-YYYY');
+                    return parsed.isValid() ? parsed : dayjs(d);
+                };
+
+                form.setFieldsValue({
+                    dealerName: data["NAME"],
+                    address: data["ADDRESS"],
+                    deliveryAddress: data["ADDRESS OF DELIVERY"],
+                    invoiceNo: data["INVOICE NO"],
+                    date: parseDate(data["DATE"]),
+                    placeOfSupply: data["PLACE OF SUPPLY"],
+                    daNumber: data["DA NUMBER"],
+                    daDate: parseDate(data["DA DATE"]),
+                    modeOfTransport: data["MODE OF DISPATCH"],
+                    transporter: data["TRANSPORTER"],
+                    policyNumber: data["POLICY NO"],
+                    vehicleNo: data["VEHICLE NO"],
+                    from: data["FROM"],
+                    to: data["TO"],
+                    insuranceCo: data["INSURANCE CO"]
+                });
+                message.success('Data extraction successful! Please verify the results.');
+            }
+        } catch (err: any) {
+            message.error(err.response?.data?.message || 'Data extraction failed.');
+        } finally {
+            setLoading(false);
+            setProcessingStep('');
+        }
+        return false;
+    };
+
+    const handleSave = async () => {
+        try {
+            const values = await form.validateFields();
+            setLoading(true);
+            setProcessingStep(isEditMode ? 'Updating Record...' : 'Saving to Database...');
+
+            const payload = {
+                ...values,
+                date: values.date?.toISOString(),
+                daDate: values.daDate?.toISOString(),
+                vehicles: extractedData["VEHICLES"]
+            };
+
+            const res = isEditMode
+                ? await updateVehicleStockInward(id!, payload)
+                : await createVehicleStockInward(payload);
+
+            if (res.data.success) {
+                message.success(isEditMode ? 'Inward record updated successfully' : 'Inward record saved successfully');
+                navigate('/company/vehicle-stock-inward');
+            }
+        } catch (err: any) {
+            message.error(err.response?.data?.message || 'Action failed');
+        } finally {
+            setLoading(false);
+            setProcessingStep('');
+        }
+    };
+
+    const handleCellChange = async (value: string, rowIndex: number, dataIndex: string) => {
+        const upperValue = value?.toUpperCase() || '';
+        const updated = [...extractedData["VEHICLES"]];
+        const row = { ...updated[rowIndex], [dataIndex]: upperValue };
+
+        // If model changes, clear color and fetch new color list
+        if (dataIndex === 'modelCode') {
+            row.colorCode = ''; // Reset color
+            try {
+                const colorRes = await getColorsByModel(upperValue);
+                setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: colorRes.data?.data || [] }));
+            } catch (e) {
+                console.error('Failed to fetch colors for row', rowIndex, e);
+            }
+        }
+
+        // Trigger image lookup if either model or color changes
+        if ((dataIndex === 'modelCode' || dataIndex === 'colorCode') && row.modelCode) {
+            try {
+                const imgRes = await lookupVehicleImage(row.modelCode, row.colorCode);
+                row.imageUrl = imgRes.data?.data || '';
+            } catch (e) {
+                console.error('Dynamic image lookup failed', e);
+            }
+        }
+
+        updated[rowIndex] = row;
+        setExtractedData({ ...extractedData, VEHICLES: updated });
+    };
+
+    const handleAddVehicle = () => {
+        const newVehicle = {
+            modelCode: '',
+            chassisNo: '',
+            engineNo: '',
+            colorCode: '',
+            qty: 1
+        };
+
+        setExtractedData((prev: any) => ({
+            ...prev,
+            VEHICLES: [...(prev?.VEHICLES || []), newVehicle]
+        }));
+    };
+
+    const handleCancel = () => {
+        navigate('/company/vehicle-stock-inward');
+    };
+
+    const getEditableColumn = (title: string, dataIndex: string) => ({
+        title,
+        dataIndex,
+        key: dataIndex,
+        render: (_: any, record: any, rowIndex: number) => {
+            if (isViewOnly) return <div style={{ padding: '4px 11px' }}>{record[dataIndex] || ''}</div>;
+
+            return (
+                <Input
+                    value={record[dataIndex]}
+                    onChange={(e) => handleCellChange(e.target.value, rowIndex, dataIndex)}
+                    style={{ borderRadius: 0, textTransform: 'uppercase' }}
+                />
+            );
+        }
+    });
+
+    const vehicleColumns = [
+        {
+            title: 'S.No',
+            dataIndex: 'sno',
+            key: 'sno',
+            render: (_: any, __: any, index: number) => index + 1,
+            width: 70,
+        },
+        {
+            title: 'Model Code',
+            dataIndex: 'modelCode',
+            key: 'modelCode',
+            width: 200,
+            render: (text: string, record: any, rowIndex: number) => (
+                <Select
+                    showSearch
+                    className={styles.uppercaseSearch}
+                    style={{ width: '100%' }}
+                    value={text}
+                    disabled={isViewOnly}
+                    onChange={(val: string) => handleCellChange(val, rowIndex, 'modelCode')}
+                    options={availableModels.map(m => ({ label: m.toUpperCase(), value: m.toUpperCase() }))}
+                    optionFilterProp="label"
+                />
+            )
+        },
+        getEditableColumn('Chassis No', 'chassisNo'),
+        getEditableColumn('Engine No', 'engineNo'),
+        {
+            title: 'Color',
+            dataIndex: 'colorCode',
+            key: 'colorCode',
+            width: 150,
+            render: (text: string, record: any, rowIndex: number) => {
+                const colors = rowColors[rowIndex] || [];
+                return (
+                    <Select
+                        className={styles.uppercaseSearch}
+                        style={{ width: '100%' }}
+                        value={text}
+                        disabled={isViewOnly || !record.modelCode}
+                        onChange={(val: string) => handleCellChange(val, rowIndex, 'colorCode')}
+                        onFocus={async () => {
+                            if (record.modelCode && (!colors || colors.length === 0)) {
+                                try {
+                                    const res = await getColorsByModel(record.modelCode);
+                                    setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: res.data?.data || [] }));
+                                } catch (e) {
+                                    console.error('OnFocus colors fetch failed', e);
+                                }
+                            }
+                        }}
+                        options={colors.map((c: any) => ({ label: c.code.toUpperCase(), value: c.code.toUpperCase() }))}
+                        optionFilterProp="label"
+                    />
+                );
+            }
+        },
+        {
+            title: 'Vehicle Color View',
+            key: 'vehicleImage',
+            align: 'center' as const,
+            render: (_: any, record: any) => (
+                record.imageUrl && record.imageUrl !== 'NONE' ? (
+                    <div style={{ padding: '8px 0' }}>
+                        <img
+                            src={record.imageUrl}
+                            alt="vehicle"
+                            style={{
+                                width: 320,
+                                height: 180,
+                                objectFit: 'contain',
+                                border: '1px solid #f0f0f0',
+                                background: '#fff',
+                                borderRadius: '12px',
+                                boxShadow: 'none',
+                                padding: '8px'
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <div style={{ width: 320, height: 180, background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#bfbfbf', border: '1px dashed #d9d9d9', borderRadius: '12px', margin: '0 auto', boxShadow: 'none' }}>
+                        No Image
+                    </div>
+                )
+            ),
+            width: 350,
+        },
+        ...(!isViewOnly ? [{
+            title: 'Action',
+            key: 'delete',
+            width: 70,
+            render: (_: any, __: any, rowIndex: number) => (
+                <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                        const updated = [...extractedData["VEHICLES"]];
+                        updated.splice(rowIndex, 1);
+                        setExtractedData({ ...extractedData, VEHICLES: updated });
+                    }}
+                />
+            )
+        }] : [])
+    ];
+
+    const getPageTitle = () => {
+        if (isViewOnly) return "View Inward Record";
+        if (isEditMode) return "Edit Inward Record";
+        return "Import Inward Record";
+    };
+
+    return (
+        <div className={styles.pageContainer}>
+            <div className={styles.header}>
+                <Space size="large">
+                    <Button
+                        icon={<ArrowLeftOutlined />}
+                        shape="circle"
+                        onClick={() => navigate('/company/vehicle-stock-inward')}
+                    />
+                    <Title level={4} style={{ margin: 0 }}>
+                        {getPageTitle()}
+                    </Title>
+                </Space>
+            </div>
+
+            <Card className={styles.cardContainer}>
+                {loading && !extractedData && (
+                    <div style={{ textAlign: 'center', padding: '50px' }}>
+                        <Spin size="large" />
+                        <div style={{ marginTop: 15 }}>{processingStep || 'Loading...'}</div>
+                    </div>
+                )}
+
+                {loading && extractedData && (
+                    <div className={styles.processingOverlay}>
+                        <Spin size="large" />
+                        <Text strong style={{ color: '#1a8a7a', marginTop: 15 }}>{processingStep}</Text>
+                    </div>
+                )}
+
+                {!extractedData && !loading && (
+                    <div style={{ padding: '20px 0' }}>
+                        <Dragger
+                            beforeUpload={handleFileUpload}
+                            showUploadList={false}
+                            accept=".pdf"
+                            disabled={loading}
+                        >
+                            <p className="ant-upload-drag-icon">
+                                <InboxOutlined style={{ color: '#1a8a7a' }} />
+                            </p>
+                            <p className="ant-upload-text">Click or drag PDF to this area to upload</p>
+                            <p className="ant-upload-hint">
+                                Upload the Yamaha Dispatch Advice PDF to automatically extract vehicle details.
+                            </p>
+                        </Dragger>
+                    </div>
+                )}
+
+                {extractedData && (
+                    <Form form={form} layout="vertical" disabled={isViewOnly}>
+                        <Row gutter={16}>
+                            <Col span={8}><Form.Item name="dealerName" label="Dealer Name"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="invoiceNo" label="Invoice No"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item></Col>
+
+                            <Col span={12}><Form.Item name="address" label="Billing Address"><Input.TextArea rows={2} /></Form.Item></Col>
+                            <Col span={12}><Form.Item name="deliveryAddress" label="Delivery Address"><Input.TextArea rows={2} /></Form.Item></Col>
+
+                            <Col span={8}><Form.Item name="placeOfSupply" label="Place of Supply"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="daNumber" label="DA Number"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="daDate" label="DA Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item></Col>
+
+                            <Col span={8}><Form.Item name="modeOfTransport" label="Mode of Transport"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="transporter" label="Transporter"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="vehicleNo" label="Truck No"><Input /></Form.Item></Col>
+
+                            <Col span={8}><Form.Item name="from" label="Dispatch From"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="to" label="Dispatch To"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="insuranceCo" label="Insurance Company"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="policyNumber" label="Policy Number"><Input /></Form.Item></Col>
+                        </Row>
+
+                        <Title level={5} style={{ marginTop: 20 }}>Vehicles List</Title>
+                        <Table
+                            dataSource={extractedData["VEHICLES"]}
+                            columns={vehicleColumns}
+                            pagination={false}
+                            rowKey={(_, index) => index!}
+                            scroll={{ x: true }}
+                        />
+
+                        {!isViewOnly && (
+                            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Button
+                                    icon={<PlusOutlined />}
+                                    onClick={handleAddVehicle}
+                                    style={{ borderColor: '#1a8a7a', color: '#1a8a7a' }}
+                                >
+                                    Add Vehicle
+                                </Button>
+                                <Space size="middle">
+                                    <Button
+                                        type="primary"
+                                        icon={isEditMode ? <EditOutlined /> : <SaveOutlined />}
+                                        loading={loading}
+                                        onClick={handleSave}
+                                        style={{ backgroundColor: '#1a8a7a', borderColor: '#1a8a7a' }}
+                                    >
+                                        {isEditMode ? 'Update Record' : 'Save Record'}
+                                    </Button>
+                                    <Button
+                                        onClick={handleCancel}
+                                    >
+                                        Cancel
+                                    </Button>
+                                </Space>
+                            </div>
+                        )}
+                    </Form>
+                )}
+            </Card>
+        </div>
+    );
+};
+
+export default InwardImportPage;

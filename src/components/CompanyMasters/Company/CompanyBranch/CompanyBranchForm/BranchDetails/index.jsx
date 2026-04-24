@@ -136,9 +136,7 @@ function BranchDetails({
       const formValues = {
         name: values.name,
         gst: values.gst,
-        branchType: values.branchType,
         phone: values.phone,
-        noOfRamps: values.noOfRamps,
         manufacturer,
         personInCharge,
         senderId: values.senderId || undefined,
@@ -361,23 +359,85 @@ function BranchDetails({
         !error.address &&
         dataSource.length > 0
       ) {
-        setCurrent(1);
         let allDetails = getFieldsValue();
         if (values) {
-          let bankDetails = values.bankDetails;
-          let id = values.id;
-          allDetails.bankDetails = bankDetails;
-          allDetails.id = id;
+          allDetails.id = values.id;
           allDetails.contacts = dataSource;
-          // allDetails.personInCharge = personInCharge
         } else {
-          allDetails.bankDetails = [{ id: "" }];
           allDetails.contacts = dataSource;
-          // allDetails.personInCharge = personInCharge
         }
 
         setValues(allDetails);
         setGstName("");
+
+        // Final Save Logic consolidated here
+        setTableLoading(true);
+        if (!modifyType) {
+          platformApi
+            .post("/api/branches", allDetails)
+            .then((res) => {
+              if (res.data.code === 200) {
+                let data = [...dataSource];
+                let responseData = res.data.response.data;
+                responseData.count = 0;
+                responseData.address.state = responseData.address.state.id;
+                responseData.address.country = responseData.address.country.id;
+                responseData.address.district = responseData.address.district.id;
+
+                // Fetch fresh data for table
+                platformApi.post("/api/branches", { page: 1, size: 10 }).then(revRes => {
+                  if (revRes.data.code === 200) {
+                    setDataSource(revRes.data.response.data.branch);
+                  }
+                });
+
+                message.success("Branch added Successfully");
+                setVisible(false);
+                setTableLoading(false);
+              } else {
+                message.error("Error Adding Branch");
+                setTableLoading(false);
+              }
+            })
+            .catch((err) => {
+              message.error("Connection Error");
+              setTableLoading(false);
+            });
+        } else {
+          // Handle contact deletions first if any
+          if (delData && delData.length > 0) {
+            for (let i = 0; i < delData.length; i++) {
+              const ele = delData[i];
+              if (ele.id) {
+                platformApi.delete(`/api/branches/contacts/${ele.id}`);
+              }
+            }
+          }
+
+          platformApi
+            .put(`/api/branches/${values.id}`, allDetails)
+            .then((res) => {
+              if (res.data.code === 200) {
+                let responseData = res.data.response.data;
+                responseData.address.state = responseData.address.state.id;
+                responseData.address.country = responseData.address.country.id;
+                responseData.address.district = responseData.address.district.id;
+
+                let data = dataSource.map(obj => obj.id === responseData.id ? { ...obj, ...responseData } : obj);
+                setDataSource(data);
+                message.success("Branch Saved Successfully");
+                setVisible(false);
+                setTableLoading(false);
+              } else {
+                message.error("Error Saving Branch");
+                setTableLoading(false);
+              }
+            })
+            .catch((err) => {
+              message.error("Connection Error");
+              setTableLoading(false);
+            });
+        }
       }
       if (dataSource.length === 0) {
         setError({
@@ -769,30 +829,6 @@ function BranchDetails({
               )}
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Item label="Branch Type">
-              {getFieldDecorator("branchType", {
-                rules: [
-                  {
-                    required: true,
-                    message: "Select your Branch Type!",
-                  },
-                ],
-              })(
-                <Select
-                  placeholder="Branch Type"
-                  showAction={["click", "focus"]}
-                  disabled={editable}
-                >
-                  <Select.Option value="Showroom">Showroom</Select.Option>
-                  <Select.Option value="Workshop">Workshop</Select.Option>
-                  <Select.Option value="Showroom + Workshop">
-                    Showroom + Workshop
-                  </Select.Option>
-                </Select>
-              )}
-            </Item>
-          </Col>
         </Row>
         <Row gutter={16}>
           <Col span={12}>
@@ -949,32 +985,8 @@ function BranchDetails({
           </Col>
           <Col
             span={12}
-            style={{
-              display:
-                form.getFieldValue("branchType") === "Workshop" ||
-                  form.getFieldValue("branchType") === "Showroom + Workshop"
-                  ? "block"
-                  : "none",
-            }}
+            style={{ display: "none" }}
           >
-            <Item label="Ramp count">
-              {getFieldDecorator("noOfRamps", {
-                initialValue: values && values.noOfRamps,
-                rules: [
-                  {
-                    required: true,
-                    message: "Enter Ramp count",
-                  },
-                ],
-              })(
-                <InputNumber
-                  min={0}
-                  max={9999}
-                  style={{ width: "100%" }}
-                  disabled={editable}
-                />
-              )}
-            </Item>
           </Col>
         </Row>
 
@@ -1337,7 +1349,7 @@ function BranchDetails({
                     handleNext();
                   }}
                 >
-                  Next
+                  Save
                 </Button>
               )}
             </Col>

@@ -70,12 +70,12 @@ const IdGeneratorModal: React.FC<IdGeneratorModalProps> = ({ open, onClose, onSa
                     <Col span={12}>
                         <Form.Item name="subModule" label={<span className={styles.formLabel}>Sub Module</span>} rules={[{ required: true }]}>
                             <Select placeholder="Select Sub Module">
-                                <Option value="Customer Details">Customer Details</Option>
-                                <Option value="Employee">Employee</Option>
-                                <Option value="Job Order">Job Order</Option>
-                                <Option value="Quotations">Quotations</Option>
-                                <Option value="Vehicle Purchase Invoice">Vehicle Purchase Invoice</Option>
-                                <Option value="Spare Purchase Invoice">Spare Purchase Invoice</Option>
+                                <Option value="CUSTOMER">Customer Details</Option>
+                                <Option value="EMPLOYEE">Employee</Option>
+                                <Option value="JOBORDER">Job Order</Option>
+                                <Option value="QUOTATIONS">Quotations</Option>
+                                <Option value="VPI">Vehicle Purchase Invoice</Option>
+                                <Option value="PSI">Spare Purchase Invoice</Option>
                             </Select>
                         </Form.Item>
                     </Col>
@@ -89,7 +89,7 @@ const IdGeneratorModal: React.FC<IdGeneratorModalProps> = ({ open, onClose, onSa
                     </Col>
                     <Col span={12}>
                         <Form.Item name="count" label={<span className={styles.formLabel}>Upcoming ID</span>}>
-                            <Input placeholder="Enter count" readOnly={!!initialValues} />
+                            <Input placeholder="Enter count" disabled={!!initialValues} />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -98,8 +98,8 @@ const IdGeneratorModal: React.FC<IdGeneratorModalProps> = ({ open, onClose, onSa
                     <Col span={12}>
                         <Form.Item name="scope" label={<span className={styles.formLabel}>Scope of ID</span>} rules={[{ required: true }]}>
                             <Select placeholder="Select Scope">
-                                <Option value="Company level">Company level</Option>
-                                <Option value="Branch level">Branch level</Option>
+                                <Option value="COMPANY">Company level</Option>
+                                <Option value="BRANCH">Branch level</Option>
                             </Select>
                         </Form.Item>
                     </Col>
