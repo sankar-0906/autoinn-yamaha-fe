@@ -3,7 +3,7 @@ import { getToken, removeToken } from '../utils/storage';
 import { message } from 'antd';
 
 // Base API URL from .env
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const baseURL = import.meta.env.VITE_API_URL;
 
 // Create Axios instance
 const axiosInstance = axios.create({
