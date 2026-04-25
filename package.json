@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ant-design/compatible": "^5.1.4",
     "@ant-design/icons": "^6.1.0",
     "@babel/runtime": "^7.29.2",
     "@types/js-cookie": "^3.0.6",
