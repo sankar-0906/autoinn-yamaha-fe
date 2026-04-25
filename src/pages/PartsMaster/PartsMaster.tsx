@@ -17,6 +17,7 @@ const PartsMasterPage: React.FC = () => {
     const [readOnly, setReadOnly] = useState(false);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
+    const [pageSize, setPageSize] = useState(10);
 
     const fetchParts = async () => {
         setLoading(true);
@@ -182,9 +183,10 @@ const PartsMasterPage: React.FC = () => {
                     loading={loading}
                     rowKey="id"
                     pagination={{
-                        pageSize: 10,
+                        pageSize: pageSize,
                         showSizeChanger: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
+                        onShowSizeChange: (_, size) => setPageSize(size),
                     }}
                     onRow={(record) => ({
                         onClick: (e) => {

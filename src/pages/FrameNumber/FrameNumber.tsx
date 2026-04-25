@@ -17,6 +17,7 @@ const FrameNumberPage: React.FC = () => {
     const [selectedFrame, setSelectedFrame] = useState<any>(null);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
+    const [pageSize, setPageSize] = useState(10);
 
     const fetchFrameNumbers = async () => {
         setLoading(true);
@@ -176,8 +177,9 @@ const FrameNumberPage: React.FC = () => {
                     loading={loading}
                     rowKey="id"
                     pagination={{
-                        pageSize: 10,
+                        pageSize: pageSize,
                         showSizeChanger: true,
+                        onShowSizeChange: (_, size) => setPageSize(size),
                     }}
                     className={styles.frameTable}
                 />

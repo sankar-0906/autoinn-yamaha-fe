@@ -51,8 +51,8 @@ const HSNCode = () => {
                 setSpinning(false);
                 const { data } = res;
                 if (data.success) {
-                    setCount(data.data.count || 0);
-                    setData(data.data.hsn || []);
+                    setCount(data.data.total || 0);
+                    setData(data.data.hsns || []);
                 } else {
                     message.error(data.message || "Unable to fetch HSN");
                 }

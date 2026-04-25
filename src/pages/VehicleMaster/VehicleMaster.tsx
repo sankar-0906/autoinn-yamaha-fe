@@ -18,6 +18,7 @@ const VehicleMasterPage: React.FC = () => {
     const [isCloning, setIsCloning] = useState(false);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
+    const [pageSize, setPageSize] = useState(10);
 
     const fetchVehicles = async () => {
         setLoading(true);
@@ -217,9 +218,10 @@ const VehicleMasterPage: React.FC = () => {
                         style: { cursor: 'pointer' }
                     })}
                     pagination={{
-                        pageSize: 10,
+                        pageSize: pageSize,
                         showSizeChanger: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
+                        onShowSizeChange: (_, size) => setPageSize(size),
                     }}
                     className={styles.vehicleTable}
                 />

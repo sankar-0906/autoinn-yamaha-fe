@@ -23,6 +23,7 @@ const VehicleStockInwardPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [searchText, setSearchText] = useState('');
+    const [pageSize, setPageSize] = useState(10);
 
     const fetchData = async () => {
         setLoading(true);
@@ -189,7 +190,11 @@ const VehicleStockInwardPage: React.FC = () => {
                     dataSource={filteredData}
                     rowKey="id"
                     loading={loading}
-                    pagination={{ pageSize: 10 }}
+                    pagination={{
+                        pageSize: pageSize,
+                        showSizeChanger: true,
+                        onShowSizeChange: (_, size) => setPageSize(size),
+                    }}
                 />
             </div>
         </div>

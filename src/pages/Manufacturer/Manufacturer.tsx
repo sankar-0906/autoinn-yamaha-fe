@@ -18,6 +18,7 @@ const ManufacturerPage: React.FC = () => {
     const [readOnly, setReadOnly] = useState(false);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
+    const [pageSize, setPageSize] = useState(10);
 
     const fetchManufacturers = async () => {
         setLoading(true);
@@ -180,9 +181,10 @@ const ManufacturerPage: React.FC = () => {
                         style: { cursor: 'pointer' }
                     })}
                     pagination={{
-                        pageSize: 10,
+                        pageSize: pageSize,
                         showSizeChanger: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
+                        onShowSizeChange: (_, size) => setPageSize(size),
                         locale: { items_per_page: '' }
                     }}
                     className={styles.manufacturerTable}

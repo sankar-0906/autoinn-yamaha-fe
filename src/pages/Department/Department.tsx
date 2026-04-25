@@ -16,6 +16,7 @@ const DepartmentPage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [readOnly, setReadOnly] = useState(false);
+    const [pageSize, setPageSize] = useState(10);
 
     useEffect(() => {
         fetchDepartments();
@@ -183,10 +184,11 @@ const DepartmentPage: React.FC = () => {
                         style: { cursor: 'pointer' }
                     })}
                     pagination={{
-                        pageSize: 10,
+                        pageSize: pageSize,
                         showSizeChanger: true,
                         showQuickJumper: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
+                        onShowSizeChange: (_, size) => setPageSize(size),
                         locale: { items_per_page: '' }
                     }}
                 />

@@ -360,7 +360,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                             </Form.Item>
                                         </Col>
                                         <Col span={8}>
-                                            <Form.Item {...restField} name={[name, 'branchId']} label={<span className={styles.formLabel}>Link Branch</span>}>
+                                            <Form.Item {...restField} name={[name, 'branchId']} label={<span className={styles.formLabel}>Branch</span>}>
                                                 <Select placeholder="Select Branch" disabled={readOnly} allowClear style={{ width: '100%' }}>
                                                     {branches.map(b => <Option key={b.id} value={b.id}>{b.name}</Option>)}
                                                 </Select>

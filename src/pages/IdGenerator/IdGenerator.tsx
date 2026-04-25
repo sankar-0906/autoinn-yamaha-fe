@@ -17,6 +17,7 @@ const IdGeneratorPage: React.FC = () => {
     const [selectedGenerator, setSelectedGenerator] = useState<any>(null);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
+    const [pageSize, setPageSize] = useState(10);
 
     const fetchIdGenerators = async () => {
         setLoading(true);
@@ -172,8 +173,9 @@ const IdGeneratorPage: React.FC = () => {
                     loading={loading}
                     rowKey="id"
                     pagination={{
-                        pageSize: 10,
+                        pageSize: pageSize,
                         showSizeChanger: true,
+                        onShowSizeChange: (_, size) => setPageSize(size),
                     }}
                     className={styles.idTable}
                 />

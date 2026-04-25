@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Input, Typography, Space, message, Modal, Tag } from 'antd';
 import { PlusOutlined, SearchOutlined, LeftOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getDealers, createDealer, updateDealer, deleteDealer } from '../../api/dealer';
 import DealerMasterModal from './DealerMasterModal';
 import styles from './DealerMaster.module.css';
@@ -17,6 +17,9 @@ const DealerMasterPage: React.FC = () => {
     const [readOnly, setReadOnly] = useState(false);
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const [pageSize, setPageSize] = useState(10);
+    const [hasCheckedUrl, setHasCheckedUrl] = useState(false);
 
     const fetchDealers = async () => {
         setLoading(true);
@@ -33,6 +36,17 @@ const DealerMasterPage: React.FC = () => {
     useEffect(() => {
         fetchDealers();
     }, []);
+
+    useEffect(() => {
+        const dealerId = searchParams.get('id');
+        if (dealerId && dealers.length > 0 && !hasCheckedUrl) {
+            const dealer = dealers.find(d => d.id === dealerId);
+            if (dealer) {
+                handleModify(dealer);
+                setHasCheckedUrl(true);
+            }
+        }
+    }, [searchParams, dealers, hasCheckedUrl]);
 
     const handleAdd = () => {
         setSelectedDealer(null);
@@ -122,7 +136,7 @@ const DealerMasterPage: React.FC = () => {
             title: 'GST Dealer Type',
             dataIndex: 'dealerType',
             key: 'dealerType',
-            render: (type: string) => type || 'Regular'
+            render: (type: string) => type || '-'
         },
         {
             title: 'Action',
@@ -180,9 +194,10 @@ const DealerMasterPage: React.FC = () => {
                     loading={loading}
                     rowKey="id"
                     pagination={{
-                        pageSize: 10,
+                        pageSize: pageSize,
                         showSizeChanger: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
+                        onShowSizeChange: (_, size) => setPageSize(size),
                     }}
                     onRow={(record) => ({
                         onClick: (e) => {

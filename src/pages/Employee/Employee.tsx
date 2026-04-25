@@ -18,6 +18,7 @@ const EmployeePage: React.FC = () => {
     const [activeTab, setActiveTab] = useState('active');
     const [readOnly, setReadOnly] = useState(false);
     const navigate = useNavigate();
+    const [pageSize, setPageSize] = useState(10);
 
     const fetchEmployees = async () => {
         setLoading(true);
@@ -212,9 +213,10 @@ const EmployeePage: React.FC = () => {
                     style: { cursor: 'pointer' }
                 })}
                 pagination={{
-                    pageSize: 10,
+                    pageSize: pageSize,
                     showSizeChanger: true,
                     pageSizeOptions: ['10', '20', '50', '100'],
+                    onShowSizeChange: (_, size) => setPageSize(size),
                     locale: { items_per_page: '' }
                 }}
                 className={styles.employeeTable}

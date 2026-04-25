@@ -19,6 +19,7 @@ const VehicleInventory: React.FC = () => {
     const [counts, setCounts] = useState<any>({ total: 0, categoryWise: [], dealerWise: [] });
     const [isCountModalVisible, setIsCountModalVisible] = useState(false);
     const [searchText, setSearchText] = useState('');
+    const [pageSize, setPageSize] = useState(10);
 
     useEffect(() => {
         fetchDealers();
@@ -166,7 +167,11 @@ const VehicleInventory: React.FC = () => {
                         dataSource={filteredSummary}
                         loading={loading}
                         rowKey="key"
-                        pagination={{ pageSize: 10 }}
+                        pagination={{
+                            pageSize: pageSize,
+                            showSizeChanger: true,
+                            onShowSizeChange: (_, size) => setPageSize(size),
+                        }}
                         size="small"
                         rowClassName={(_, index) => index % 2 === 0 ? styles.inventoryRow : `${styles.inventoryRow} ${styles.alternateRow}`}
                         onRow={(record) => ({

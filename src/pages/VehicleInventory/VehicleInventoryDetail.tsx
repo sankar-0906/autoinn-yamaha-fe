@@ -1,26 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Row, Col, Typography, Select, Button, Image, Empty, Space, Tag } from 'antd';
+import { Table, Row, Col, Typography, Button, Image, Empty, Space, Tag, Popover } from 'antd';
 import { LeftOutlined, CalendarOutlined, CarOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './VehicleInventory.module.css';
 import { getInventoryDetails } from '../../api/vehicleInventory';
-import { getDealers as getAllDealers } from '../../api/dealer';
+import { getDealers as getAllDealers, updateDealer } from '../../api/dealer';
+import DealerMasterModal from '../DealerMaster/DealerMasterModal';
 import moment from 'moment';
+import { message } from 'antd';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 const VehicleInventoryDetail: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const modelId = searchParams.get('modelId');
     const colorCode = searchParams.get('colorCode');
-    const [dealerId, setDealerId] = useState(searchParams.get('dealerId') || 'all');
+    const [dealerId] = useState(searchParams.get('dealerId') || 'all');
 
     const [loading, setLoading] = useState(false);
     const [units, setUnits] = useState<any[]>([]);
     const [dealers, setDealers] = useState<any[]>([]);
     const [vehicleInfo, setVehicleInfo] = useState<any>(null);
+    const [dealerModalOpen, setDealerModalOpen] = useState(false);
+    const [selectedDealerForModal, setSelectedDealerForModal] = useState<any>(null);
+    const [savingDealer, setSavingDealer] = useState(false);
 
     useEffect(() => {
         fetchDealers();
@@ -64,6 +68,23 @@ const VehicleInventoryDetail: React.FC = () => {
         }
     };
 
+    const handleSaveDealer = async (values: any) => {
+        setSavingDealer(true);
+        try {
+            if (selectedDealerForModal) {
+                await updateDealer(selectedDealerForModal.id, values);
+                message.success('Dealer updated successfully');
+                fetchDealers();
+                fetchUnits(); // Refresh units to get updated dealer info if needed
+            }
+            setDealerModalOpen(false);
+        } catch (error: any) {
+            message.error(error.message || 'Failed to save dealer');
+        } finally {
+            setSavingDealer(false);
+        }
+    };
+
     const columns = [
         {
             title: 'MFG Date',
@@ -103,9 +124,38 @@ const VehicleInventoryDetail: React.FC = () => {
         {
             title: 'Action',
             key: 'action',
-            render: () => (
-                <Button type="link" icon={<InfoCircleOutlined />}>History</Button>
-            )
+            render: (_: any, record: any) => {
+                const inward = record.lineItem?.inward;
+                const dealer = inward?.dealer;
+
+                const content = (
+                    <div style={{ padding: '4px' }}>
+                        <div style={{ marginBottom: '8px' }}>
+                            <Text type="secondary">Invoice Date: </Text>
+                            <Text>{inward?.date ? moment(inward.date).format('DD-MM-YYYY') : '-'}</Text>
+                        </div>
+                        <div>
+                            <Text type="secondary">Supplier: </Text>
+                            <a
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setSelectedDealerForModal(dealer);
+                                    setDealerModalOpen(true);
+                                }}
+                                style={{ color: '#0891b2', textDecoration: 'underline' }}
+                            >
+                                {dealer?.name || '-'}
+                            </a>
+                        </div>
+                    </div>
+                );
+
+                return (
+                    <Popover content={content} trigger="hover" placement="left">
+                        <Button type="link" icon={<InfoCircleOutlined />} />
+                    </Popover>
+                );
+            }
         }
     ];
 
@@ -138,15 +188,12 @@ const VehicleInventoryDetail: React.FC = () => {
                             </div>
                             <div className={styles.detailField}>
                                 <div className={styles.fieldLabel}>Dealer Name :</div>
-                                <Select
-                                    style={{ width: '100%' }}
-                                    value={dealerId}
-                                    onChange={setDealerId}
-                                    size="middle"
-                                >
-                                    <Option value="all">ALL DEALERS</Option>
-                                    {dealers.map(d => <Option key={d.id} value={d.id}>{d.name}</Option>)}
-                                </Select>
+                                <div className={styles.fieldValue}>
+                                    {dealerId !== 'all'
+                                        ? (dealers.find(d => d.id === dealerId)?.name || dealerId)
+                                        : (units[0]?.lineItem?.inward?.dealer?.name || 'ALL DEALERS')
+                                    }
+                                </div>
                             </div>
                             <div className={styles.detailField}>
                                 <div className={styles.fieldLabel}>Current Stock :</div>
@@ -199,6 +246,17 @@ const VehicleInventoryDetail: React.FC = () => {
                     }}
                 />
             </div>
+
+            {dealerModalOpen && (
+                <DealerMasterModal
+                    open={dealerModalOpen}
+                    onClose={() => setDealerModalOpen(false)}
+                    onSave={handleSaveDealer}
+                    initialValues={selectedDealerForModal}
+                    loading={savingDealer}
+                    readOnly={false}
+                />
+            )}
         </div>
     );
 };
