@@ -19,12 +19,21 @@ const EmployeePage: React.FC = () => {
     const [readOnly, setReadOnly] = useState(false);
     const navigate = useNavigate();
     const [pageSize, setPageSize] = useState(10);
+    const [page, setPage] = useState(1);
+    const [count, setCount] = useState(0);
 
     const fetchEmployees = async () => {
         setLoading(true);
         try {
-            const res = await getEmployees();
-            setEmployees(res.data.users || []);
+            const res = await getEmployees({
+                page,
+                limit: pageSize,
+                search: searchTerm,
+                activeTab
+            });
+            const { users, count } = res.data || {};
+            setEmployees(users || []);
+            setCount(count || 0);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch employees');
         } finally {
@@ -34,7 +43,12 @@ const EmployeePage: React.FC = () => {
 
     useEffect(() => {
         fetchEmployees();
-    }, []);
+    }, [page, pageSize, activeTab, searchTerm]);
+
+    const handleTabChange = (key: string) => {
+        setActiveTab(key);
+        setPage(1);
+    };
 
     const handleAdd = () => {
         setSelectedEmployee(null);
@@ -85,16 +99,6 @@ const EmployeePage: React.FC = () => {
             message.error(error.message || 'Failed to save employee');
         }
     };
-
-    const filteredEmployees = employees.filter(emp => {
-        const matchesSearch = emp.profile?.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            emp.phone?.includes(searchTerm);
-
-        const matchesStatus = (activeTab === 'active' && emp.status === true) ||
-            (activeTab === 'inactive' && emp.status === false);
-
-        return matchesSearch && matchesStatus;
-    });
 
     const columns = [
         {
@@ -159,7 +163,7 @@ const EmployeePage: React.FC = () => {
                         onClick={() => navigate('/company')}
                     />
                     <Title level={4} style={{ margin: 0 }}>
-                        Employee [{filteredEmployees.length}]
+                        Employee [{count}]
                     </Title>
                 </Space>
                 <Space>
@@ -183,7 +187,7 @@ const EmployeePage: React.FC = () => {
 
             <Tabs
                 activeKey={activeTab}
-                onChange={setActiveTab}
+                onChange={handleTabChange}
                 className={styles.tabs}
                 items={[
                     {
@@ -199,7 +203,7 @@ const EmployeePage: React.FC = () => {
 
             <Table
                 columns={columns}
-                dataSource={filteredEmployees}
+                dataSource={employees}
                 loading={loading}
                 rowKey="id"
                 onRow={(record) => ({
@@ -213,10 +217,16 @@ const EmployeePage: React.FC = () => {
                     style: { cursor: 'pointer' }
                 })}
                 pagination={{
+                    current: page,
                     pageSize: pageSize,
+                    total: count,
                     showSizeChanger: true,
                     pageSizeOptions: ['10', '20', '50', '100'],
-                    onShowSizeChange: (_, size) => setPageSize(size),
+                    onChange: (p) => setPage(p),
+                    onShowSizeChange: (_, size) => {
+                        setPageSize(size);
+                        setPage(1);
+                    },
                     locale: { items_per_page: '' }
                 }}
                 className={styles.employeeTable}

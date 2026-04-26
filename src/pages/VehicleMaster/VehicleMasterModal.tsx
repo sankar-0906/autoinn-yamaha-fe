@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Select, Row, Col, Typography, Button, Card, Empty, Pagination, message, Upload, Image, Tabs, List, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, UploadOutlined, FilePdfOutlined, EyeOutlined, DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, UploadOutlined, FilePdfOutlined, EyeOutlined, LoadingOutlined } from '@ant-design/icons';
 import { getManufacturers } from '../../api/manufacturer';
 import { uploadImage } from '../../api/upload';
 import styles from './VehicleMaster.module.css';
@@ -52,7 +52,7 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
         const fetchManufacturers = async () => {
             try {
                 const res = await getManufacturers();
-                setManufacturers(res.data?.data || res.data || []);
+                setManufacturers(res.data?.manufacturers || []);
             } catch (error) {
                 message.error('Failed to fetch manufacturers');
             }

@@ -19,13 +19,21 @@ const DealerMasterPage: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [pageSize, setPageSize] = useState(10);
+    const [page, setPage] = useState(1);
+    const [count, setCount] = useState(0);
     const [hasCheckedUrl, setHasCheckedUrl] = useState(false);
 
     const fetchDealers = async () => {
         setLoading(true);
         try {
-            const res = await getDealers();
-            setDealers(res.data?.data || res.data || []);
+            const res = await getDealers({
+                page,
+                limit: pageSize,
+                search: searchTerm
+            });
+            const { dealers, total } = res.data?.data || res.data || {};
+            setDealers(dealers || []);
+            setCount(total || 0);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch dealers');
         } finally {
@@ -35,7 +43,7 @@ const DealerMasterPage: React.FC = () => {
 
     useEffect(() => {
         fetchDealers();
-    }, []);
+    }, [page, pageSize, searchTerm]);
 
     useEffect(() => {
         const dealerId = searchParams.get('id');
@@ -104,10 +112,7 @@ const DealerMasterPage: React.FC = () => {
         }
     };
 
-    const filteredDealers = dealers.filter((d: any) =>
-        d.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
 
     const columns = [
         {
@@ -165,7 +170,7 @@ const DealerMasterPage: React.FC = () => {
                         onClick={() => navigate('/company')}
                     />
                     <Title level={4} style={{ margin: 0 }}>
-                        Dealers [{filteredDealers.length}]
+                        Dealers [{count}]
                     </Title>
                 </Space>
                 <Space>
@@ -190,14 +195,20 @@ const DealerMasterPage: React.FC = () => {
             <div className={styles.tableContainer}>
                 <Table
                     columns={columns}
-                    dataSource={filteredDealers}
+                    dataSource={dealers}
                     loading={loading}
                     rowKey="id"
                     pagination={{
+                        current: page,
                         pageSize: pageSize,
+                        total: count,
                         showSizeChanger: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
-                        onShowSizeChange: (_, size) => setPageSize(size),
+                        onChange: (p) => setPage(p),
+                        onShowSizeChange: (_, size) => {
+                            setPageSize(size);
+                            setPage(1);
+                        },
                     }}
                     onRow={(record) => ({
                         onClick: (e) => {

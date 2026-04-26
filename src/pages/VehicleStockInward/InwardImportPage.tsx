@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
     Upload, Button, message, Form, Input, Row, Col, Table, Typography, DatePicker, Space, Card, Spin, Select
 } from 'antd';
-import { InboxOutlined, SaveOutlined, EditOutlined, ArrowLeftOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { InboxOutlined, SaveOutlined, EditOutlined, ArrowLeftOutlined, PlusOutlined, DeleteOutlined, FilePdfOutlined } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { processInwardPdf, createVehicleStockInward, updateVehicleStockInward, getVehicleStockInwardById, lookupVehicleImage } from '../../api/vehicleStockInward';
 import { getUniqueModels, getColorsByModel } from '../../api/vehicleMaster';
+import { getDealers } from '../../api/dealer';
 import dayjs from 'dayjs';
 import styles from './VehicleStockInward.module.css';
 
@@ -23,6 +24,8 @@ const InwardImportPage: React.FC = () => {
     const [processingStep, setProcessingStep] = useState<string>('');
     const [availableModels, setAvailableModels] = useState<string[]>([]);
     const [rowColors, setRowColors] = useState<Record<number, any[]>>({});
+    const [dealers, setDealers] = useState<any[]>([]);
+    const [entryMode, setEntryMode] = useState<'choice' | 'pdf' | 'manual' | 'data'>(id ? 'data' : 'choice');
 
     // Determine mode based on URL
     const isEditMode = location.pathname.includes('/edit/');
@@ -135,10 +138,14 @@ const InwardImportPage: React.FC = () => {
     useEffect(() => {
         const fetchMetadata = async () => {
             try {
-                const res = await getUniqueModels();
-                setAvailableModels(res.data?.data || []);
+                const [modelsRes, dealersRes] = await Promise.all([
+                    getUniqueModels(),
+                    getDealers({ limit: 1000 })
+                ]);
+                setAvailableModels(modelsRes.data || []);
+                setDealers(dealersRes.data?.dealers || dealersRes.dealers || []);
             } catch (error) {
-                console.error('Failed to fetch models', error);
+                console.error('Failed to fetch metadata', error);
             }
         };
         fetchMetadata();
@@ -232,7 +239,7 @@ const InwardImportPage: React.FC = () => {
                 };
 
                 form.setFieldsValue({
-                    dealerName: data["NAME"],
+                    // dealerName: data["NAME"], // User requested NOT to auto-fill dealer name
                     address: data["ADDRESS"],
                     deliveryAddress: data["ADDRESS OF DELIVERY"],
                     invoiceNo: data["INVOICE NO"],
@@ -248,7 +255,7 @@ const InwardImportPage: React.FC = () => {
                     to: data["TO"],
                     insuranceCo: data["INSURANCE CO"]
                 });
-                message.success('Data extraction successful! Please verify the results.');
+                message.success('Data extraction successful! Please select the Dealer.');
             }
         } catch (err: any) {
             message.error(err.response?.data?.message || 'Data extraction failed.');
@@ -257,6 +264,14 @@ const InwardImportPage: React.FC = () => {
             setProcessingStep('');
         }
         return false;
+    };
+
+    const handleManualEntry = () => {
+        form.resetFields();
+        setExtractedData({
+            "VEHICLES": []
+        });
+        setEntryMode('manual');
     };
 
     const handleSave = async () => {
@@ -298,7 +313,7 @@ const InwardImportPage: React.FC = () => {
             row.colorCode = ''; // Reset color
             try {
                 const colorRes = await getColorsByModel(upperValue);
-                setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: colorRes.data?.data || [] }));
+                setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: colorRes.data || [] }));
             } catch (e) {
                 console.error('Failed to fetch colors for row', rowIndex, e);
             }
@@ -400,7 +415,7 @@ const InwardImportPage: React.FC = () => {
                             if (record.modelCode && (!colors || colors.length === 0)) {
                                 try {
                                     const res = await getColorsByModel(record.modelCode);
-                                    setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: res.data?.data || [] }));
+                                    setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: res.data || [] }));
                                 } catch (e) {
                                     console.error('OnFocus colors fetch failed', e);
                                 }
@@ -464,7 +479,8 @@ const InwardImportPage: React.FC = () => {
     const getPageTitle = () => {
         if (isViewOnly) return "View Inward Record";
         if (isEditMode) return "Edit Inward Record";
-        return "Import Inward Record";
+        if (entryMode === 'manual') return "Manual Inward Entry";
+        return "New Inward Record";
     };
 
     return (
@@ -497,8 +513,49 @@ const InwardImportPage: React.FC = () => {
                     </div>
                 )}
 
-                {!extractedData && !loading && (
+                {!extractedData && !loading && entryMode === 'choice' && (
+                    <div className={styles.choiceContainer}>
+                        <Row gutter={24}>
+                            <Col span={12}>
+                                <Card
+                                    hoverable
+                                    className={`${styles.choiceCard} ${styles.pdfCard}`}
+                                    onClick={() => setEntryMode('pdf')}
+                                >
+                                    <div className={styles.choiceIcon}>
+                                        <FilePdfOutlined style={{ color: '#ff4d4f' }} />
+                                    </div>
+                                    <Title level={4}>Import from PDF</Title>
+                                    <Text type="secondary">Upload Yamaha Dispatch Advice PDF for automatic extraction</Text>
+                                </Card>
+                            </Col>
+                            <Col span={12}>
+                                <Card
+                                    hoverable
+                                    className={`${styles.choiceCard} ${styles.manualCard}`}
+                                    onClick={handleManualEntry}
+                                >
+                                    <div className={styles.choiceIcon}>
+                                        <EditOutlined style={{ color: '#1a8a7a' }} />
+                                    </div>
+                                    <Title level={4}>Manual Entry</Title>
+                                    <Text type="secondary">Create a fresh inward record and enter details manually</Text>
+                                </Card>
+                            </Col>
+                        </Row>
+                    </div>
+                )}
+
+                {!extractedData && !loading && entryMode === 'pdf' && (
                     <div style={{ padding: '20px 0' }}>
+                        <div style={{ marginBottom: 16 }}>
+                            <Button
+                                icon={<ArrowLeftOutlined />}
+                                onClick={() => setEntryMode('choice')}
+                            >
+                                Back to options
+                            </Button>
+                        </div>
                         <Dragger
                             beforeUpload={handleFileUpload}
                             showUploadList={false}
@@ -513,13 +570,29 @@ const InwardImportPage: React.FC = () => {
                                 Upload the Yamaha Dispatch Advice PDF to automatically extract vehicle details.
                             </p>
                         </Dragger>
+                        <div style={{ marginTop: 24, textAlign: 'center' }}>
+                            <Text type="secondary">PDF Parsing failed? </Text>
+                            <Button type="link" onClick={handleManualEntry}>Try Manual Entry Instead</Button>
+                        </div>
                     </div>
                 )}
 
                 {extractedData && (
                     <Form form={form} layout="vertical" disabled={isViewOnly}>
                         <Row gutter={16}>
-                            <Col span={8}><Form.Item name="dealerName" label="Dealer Name"><Input /></Form.Item></Col>
+                            <Col span={8}>
+                                <Form.Item name="dealerName" label="Dealer Name" rules={[{ required: true, message: 'Please select a dealer' }]}>
+                                    <Select
+                                        showSearch
+                                        placeholder="Select Dealer"
+                                        optionFilterProp="children"
+                                    >
+                                        {dealers.map(d => (
+                                            <Select.Option key={d.id} value={d.name}>{d.name}</Select.Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                            </Col>
                             <Col span={8}><Form.Item name="invoiceNo" label="Invoice No"><Input /></Form.Item></Col>
                             <Col span={8}><Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item></Col>
 

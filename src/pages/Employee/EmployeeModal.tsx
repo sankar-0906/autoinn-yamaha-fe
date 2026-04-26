@@ -26,8 +26,8 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
         const fetchData = async () => {
             try {
                 const [deptRes, branchRes] = await Promise.all([getDepartments(), getBranches()]);
-                setDepartments(deptRes.data.data || []);
-                setBranches(branchRes.data.branch || []);
+                setDepartments(deptRes.data?.departments || []);
+                setBranches(branchRes.data?.branches || []);
             } catch (error) {
                 message.error('Failed to fetch departments or branches');
             }

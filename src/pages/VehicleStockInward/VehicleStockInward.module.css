@@ -88,6 +88,10 @@
     border-radius: 8px;
 }
 
+:global(.ant-table-cell input) {
+    text-transform: uppercase !important;
+}
+
 /* Force uppercase on search inputs and editable cells */
 .uppercaseSearch :global(.ant-select-selection-search-input),
 .uppercaseSearch :global(.ant-select-selection-item),
@@ -95,6 +99,61 @@
     text-transform: uppercase !important;
 }
 
-:global(.ant-table-cell input) {
-    text-transform: uppercase !important;
+.choiceContainer {
+    padding: 60px 0;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.choiceCard {
+    text-align: center;
+    padding: 40px 20px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+}
+
+.choiceCard:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.pdfCard:hover {
+    border-color: #ff4d4f;
+    background: #fffafa;
+}
+
+.manualCard:hover {
+    border-color: #1a8a7a;
+    background: #f6fffd;
+}
+
+.choiceIcon {
+    font-size: 64px;
+    margin-bottom: 24px;
+}
+
+.choiceCard h4 {
+    margin-bottom: 12px;
+}
+
+.processingOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
 }

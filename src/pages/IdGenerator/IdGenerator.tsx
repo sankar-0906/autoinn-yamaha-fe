@@ -18,12 +18,20 @@ const IdGeneratorPage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
     const [pageSize, setPageSize] = useState(10);
+    const [page, setPage] = useState(1);
+    const [count, setCount] = useState(0);
 
     const fetchIdGenerators = async () => {
         setLoading(true);
         try {
-            const res = await getIdGenerators();
-            setIdGenerators(res.data?.data || res.data || []);
+            const res = await getIdGenerators({
+                page,
+                limit: pageSize,
+                search: searchTerm
+            });
+            const { idCreations, total } = res.data || {};
+            setIdGenerators(idCreations || []);
+            setCount(total || 0);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch ID generators');
         } finally {
@@ -33,7 +41,7 @@ const IdGeneratorPage: React.FC = () => {
 
     useEffect(() => {
         fetchIdGenerators();
-    }, []);
+    }, [page, pageSize, searchTerm]);
 
     const handleAdd = () => {
         setSelectedGenerator(null);
@@ -83,10 +91,7 @@ const IdGeneratorPage: React.FC = () => {
         }
     };
 
-    const filteredGenerators = idGenerators.filter(g =>
-        g.subModule?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.text?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
 
     const columns = [
         {
@@ -144,7 +149,7 @@ const IdGeneratorPage: React.FC = () => {
                         onClick={() => navigate('/company')}
                     />
                     <Title level={4} style={{ margin: 0 }}>
-                        ID Generator [{filteredGenerators.length}]
+                        ID Generator [{count}]
                     </Title>
                 </Space>
                 <Space>
@@ -169,13 +174,20 @@ const IdGeneratorPage: React.FC = () => {
             <div className={styles.tableContainer}>
                 <Table
                     columns={columns}
-                    dataSource={filteredGenerators}
+                    dataSource={idGenerators}
                     loading={loading}
                     rowKey="id"
                     pagination={{
+                        current: page,
                         pageSize: pageSize,
+                        total: count,
                         showSizeChanger: true,
-                        onShowSizeChange: (_, size) => setPageSize(size),
+                        pageSizeOptions: ['10', '20', '50', '100'],
+                        onChange: (p) => setPage(p),
+                        onShowSizeChange: (_, size) => {
+                            setPageSize(size);
+                            setPage(1);
+                        },
                     }}
                     className={styles.idTable}
                 />

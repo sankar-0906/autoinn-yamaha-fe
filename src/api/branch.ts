@@ -1,12 +1,7 @@
 import axiosInstance from './axiosInstance';
 
-export const getBranches = async () => {
-    const response = await axiosInstance.get('/branches');
-    return response.data;
-};
-
-export const getBranchById = async (id: string) => {
-    const response = await axiosInstance.get(`/branches/${id}`);
+export const getBranches = async (params = {}) => {
+    const response = await axiosInstance.post('/branches/get', params);
     return response.data;
 };
 

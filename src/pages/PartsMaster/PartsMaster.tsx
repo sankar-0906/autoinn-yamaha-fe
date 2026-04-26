@@ -18,12 +18,20 @@ const PartsMasterPage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
     const [pageSize, setPageSize] = useState(10);
+    const [page, setPage] = useState(1);
+    const [count, setCount] = useState(0);
 
     const fetchParts = async () => {
         setLoading(true);
         try {
-            const res = await getParts();
-            setParts(res.data?.data || res.data || []);
+            const res = await getParts({
+                page,
+                limit: pageSize,
+                search: searchTerm
+            });
+            const { parts, total } = res.data?.data || res.data || {};
+            setParts(parts || []);
+            setCount(total || 0);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch parts');
         } finally {
@@ -33,7 +41,7 @@ const PartsMasterPage: React.FC = () => {
 
     useEffect(() => {
         fetchParts();
-    }, []);
+    }, [page, pageSize, searchTerm]);
 
     const handleAdd = () => {
         setSelectedPart(null);
@@ -91,10 +99,7 @@ const PartsMasterPage: React.FC = () => {
         }
     };
 
-    const filteredParts = parts.filter(p =>
-        p.partNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.partName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
 
     const columns = [
         {
@@ -148,7 +153,7 @@ const PartsMasterPage: React.FC = () => {
                         onClick={() => navigate('/company')}
                     />
                     <Title level={4} style={{ margin: 0 }}>
-                        Parts [{filteredParts.length}]
+                        Parts [{count}]
                     </Title>
                 </Space>
                 <Space>
@@ -179,14 +184,20 @@ const PartsMasterPage: React.FC = () => {
             <div className={styles.tableContainer}>
                 <Table
                     columns={columns}
-                    dataSource={filteredParts}
+                    dataSource={parts}
                     loading={loading}
                     rowKey="id"
                     pagination={{
+                        current: page,
                         pageSize: pageSize,
+                        total: count,
                         showSizeChanger: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
-                        onShowSizeChange: (_, size) => setPageSize(size),
+                        onChange: (p) => setPage(p),
+                        onShowSizeChange: (_, size) => {
+                            setPageSize(size);
+                            setPage(1);
+                        },
                     }}
                     onRow={(record) => ({
                         onClick: (e) => {

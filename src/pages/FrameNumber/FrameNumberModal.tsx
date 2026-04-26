@@ -22,7 +22,7 @@ const FrameNumberModal: React.FC<FrameNumberModalProps> = ({ open, onClose, onSa
         const fetchManufacturers = async () => {
             try {
                 const res = await getManufacturers();
-                setManufacturers(res.data?.data || res.data || []);
+                setManufacturers(res.data?.manufacturers || []);
             } catch (err) {
                 console.error('Failed to fetch manufacturers', err);
             }

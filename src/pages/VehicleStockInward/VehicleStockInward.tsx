@@ -4,9 +4,9 @@ import {
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+    PlusOutlined,
     SearchOutlined,
     LeftOutlined,
-    UploadOutlined,
     EyeOutlined,
     EditOutlined,
     DeleteOutlined,
@@ -175,11 +175,11 @@ const VehicleStockInwardPage: React.FC = () => {
                     />
                     <Button
                         type="primary"
-                        icon={<UploadOutlined />}
+                        icon={<PlusOutlined />}
                         onClick={handleImportClick}
                         className={styles.importBtn}
                     >
-                        Import Inward Record
+                        Add Inward Record
                     </Button>
                 </Space>
             </div>

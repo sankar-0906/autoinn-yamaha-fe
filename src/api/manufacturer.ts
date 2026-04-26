@@ -1,7 +1,7 @@
 import axiosInstance from './axiosInstance';
 
-export const getManufacturers = async () => {
-    const response = await axiosInstance.get('/manufacturer');
+export const getManufacturers = async (params = {}) => {
+    const response = await axiosInstance.get('/manufacturer', { params });
     return response.data;
 };
 
