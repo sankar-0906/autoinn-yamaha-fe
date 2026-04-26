@@ -185,7 +185,7 @@ const CompanySettings: React.FC = () => {
                         ),
                         children: (
                             <div className={styles.tabContent}>
-                                <BranchPage />
+                                <BranchPage isTab={true} />
                             </div>
                         ),
                     },

@@ -117,7 +117,7 @@ const Branch = ({ isTab = false }) => {
                         <Tooltip title="Back to Company Master">
                             <Button
                                 style={{ marginRight: "20px" }}
-                                onClick={() => navigate("/autoadmin/company")}
+                                onClick={() => navigate("/company")}
                                 icon={<LeftOutlined />}
                             />
                         </Tooltip>

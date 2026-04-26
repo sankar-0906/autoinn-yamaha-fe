@@ -51,8 +51,8 @@ const HSNCode = () => {
                 setSpinning(false);
                 const { data } = res;
                 if (data.success) {
-                    setCount(data.data.total || 0);
-                    setData(data.data.hsns || []);
+                    setCount(data.data.count || 0);
+                    setData(data.data.hsn || []);
                 } else {
                     message.error(data.message || "Unable to fetch HSN");
                 }
@@ -115,7 +115,7 @@ const HSNCode = () => {
                     <Tooltip title="Back to Company Master">
                         <Button
                             style={{ marginRight: "20px" }}
-                            onClick={() => navigate("/autoadmin/company")}
+                            onClick={() => navigate("/company")}
                             icon={<LeftOutlined />}
                         />
                     </Tooltip>
