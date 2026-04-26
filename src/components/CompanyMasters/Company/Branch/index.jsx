@@ -11,7 +11,7 @@ import {
     LeftOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
-import axiosInstance from "../../../../api/axiosInstance";
+import { getBranches, createBranch, updateBranch, deleteBranch } from "../../../../api/branch";
 
 // Components
 import BranchTable from "./BranchTable";
@@ -41,45 +41,41 @@ const Branch = ({ isTab = false }) => {
         fetchData();
     }, [page, limit, search]);
 
-    const fetchData = () => {
+    const fetchData = async () => {
         setSpinning(true);
-        axiosInstance
-            .post("/branches/get", { page, size: limit, searchString: search })
-            .then((res) => {
-                setSpinning(false);
-                const { data } = res;
-                if (data.success) {
-                    setCount(data.data.count || 0);
-                    setData(data.data.branch || []);
-                } else {
-                    message.error(data.message || "Unable to fetch Branches");
-                }
-            })
-            .catch((error) => {
-                setSpinning(false);
-                console.error("Error in Branch fetch: ", error);
-                message.error("Unable to fetch Branches");
-            });
+        try {
+            const res = await getBranches({ page, size: limit, searchString: search });
+            if (res.success) {
+                const { branch, total } = res.data || {};
+                setData(branch || []);
+                setCount(total || 0);
+            } else {
+                message.error(res.message || "Unable to fetch Branches");
+            }
+        } catch (error) {
+            console.error("Error in Branch fetch: ", error);
+            message.error("Unable to fetch Branches");
+        } finally {
+            setSpinning(false);
+        }
     };
 
-    const deleteData = (id) => {
+    const handleDelete = async (id) => {
         setSpinning(true);
-        axiosInstance
-            .delete(`/branches/${id}`)
-            .then((res) => {
-                setSpinning(false);
-                if (res.data.success) {
-                    message.success("Branch deleted successfully");
-                    fetchData();
-                } else {
-                    message.error(res.data.message || "Unable to delete Branch");
-                }
-            })
-            .catch((error) => {
-                console.error("Error on Branch delete: ", error);
-                setSpinning(false);
-                message.error("Unable to delete Branch");
-            });
+        try {
+            const res = await deleteBranch(id);
+            if (res.success) {
+                message.success("Branch deleted successfully");
+                fetchData();
+            } else {
+                message.error(res.message || "Unable to delete Branch");
+            }
+        } catch (error) {
+            console.error("Error on Branch delete: ", error);
+            message.error("Unable to delete Branch");
+        } finally {
+            setSpinning(false);
+        }
     };
 
     const saveBranch = async (branch, branchId) => {
@@ -87,17 +83,17 @@ const Branch = ({ isTab = false }) => {
         try {
             let response;
             if (branchId) {
-                response = await axiosInstance.put(`/branches/${branchId}`, branch);
+                response = await updateBranch(branchId, branch);
             } else {
-                response = await axiosInstance.post("/branches", branch);
+                response = await createBranch(branch);
             }
 
-            if (response.data.success) {
+            if (response.success) {
                 message.success(`Branch ${branchId ? 'updated' : 'added'} successfully`);
                 fetchData();
                 return true;
             } else {
-                message.error(response.data.message || "Unable to save Branch");
+                message.error(response.message || "Unable to save Branch");
                 return false;
             }
         } catch (error) {
@@ -183,7 +179,7 @@ const Branch = ({ isTab = false }) => {
                     setAddFlag(true);
                 }}
                 dataSource={dataSource}
-                deleteBranch={deleteData}
+                deleteBranch={handleDelete}
                 spinner={spinning}
                 modify={modifyAccess}
                 deleteAccess={deleteAccess}

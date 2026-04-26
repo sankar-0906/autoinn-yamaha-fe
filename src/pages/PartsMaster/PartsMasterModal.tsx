@@ -35,12 +35,9 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                     getVehicles(),
                     getHsns()
                 ]);
-                setManufacturers(mRes.data?.data || mRes.data || []);
-                setVehicles(vRes.data?.data || vRes.data || []);
-
-                // HSN API returns { data: { hsn: [...] } }
-                const hsnData = hRes.data?.data;
-                setHsns(Array.isArray(hsnData?.hsn) ? hsnData.hsn : (Array.isArray(hsnData) ? hsnData : []));
+                setManufacturers(mRes.data?.manufacturers || []);
+                setVehicles(vRes.data?.vehicles || []);
+                setHsns(hRes.data?.hsns || []);
             } catch (error) {
                 message.error('Failed to fetch dependency data');
             }

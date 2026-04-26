@@ -17,16 +17,24 @@ const DepartmentPage: React.FC = () => {
     const [searchText, setSearchText] = useState('');
     const [readOnly, setReadOnly] = useState(false);
     const [pageSize, setPageSize] = useState(10);
+    const [page, setPage] = useState(1);
+    const [count, setCount] = useState(0);
 
     useEffect(() => {
         fetchDepartments();
-    }, []);
+    }, [page, pageSize, searchText]);
 
     const fetchDepartments = async () => {
         setLoading(true);
         try {
-            const res = await getDepartments();
-            setDepartments(res.data?.data || []);
+            const res = await getDepartments({
+                page,
+                limit: pageSize,
+                search: searchText
+            });
+            const { departments, total } = res.data || {};
+            setDepartments(departments || []);
+            setCount(total || 0);
         } catch (error: any) {
             message.error('Failed to fetch departments');
         } finally {
@@ -90,10 +98,6 @@ const DepartmentPage: React.FC = () => {
         }
     };
 
-    const filteredDepartments = departments.filter(d =>
-        d.role.toLowerCase().includes(searchText.toLowerCase())
-    );
-
     const columns = [
         {
             title: 'Department Name',
@@ -145,7 +149,7 @@ const DepartmentPage: React.FC = () => {
                 <Space size="large">
                     <Button icon={<LeftOutlined />} shape="circle" onClick={() => window.history.back()} />
                     <Title level={4} style={{ margin: 0 }}>
-                        Department [{departments.length}]
+                        Department [{count}]
                     </Title>
                 </Space>
                 <Space>
@@ -170,7 +174,7 @@ const DepartmentPage: React.FC = () => {
             <div className={styles.tableContainer}>
                 <Table
                     columns={columns}
-                    dataSource={filteredDepartments}
+                    dataSource={departments}
                     loading={loading}
                     rowKey="id"
                     onRow={(record) => ({
@@ -184,11 +188,17 @@ const DepartmentPage: React.FC = () => {
                         style: { cursor: 'pointer' }
                     })}
                     pagination={{
+                        current: page,
                         pageSize: pageSize,
+                        total: count,
                         showSizeChanger: true,
                         showQuickJumper: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
-                        onShowSizeChange: (_, size) => setPageSize(size),
+                        onChange: (p) => setPage(p),
+                        onShowSizeChange: (_, size) => {
+                            setPageSize(size);
+                            setPage(1);
+                        },
                         locale: { items_per_page: '' }
                     }}
                 />

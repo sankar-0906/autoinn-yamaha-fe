@@ -19,12 +19,20 @@ const VehicleMasterPage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
     const [pageSize, setPageSize] = useState(10);
+    const [page, setPage] = useState(1);
+    const [count, setCount] = useState(0);
 
     const fetchVehicles = async () => {
         setLoading(true);
         try {
-            const res = await getVehicles();
-            setVehicles(res.data?.response?.data?.VehicleMaster || res.data?.data || res.data || []);
+            const res = await getVehicles({
+                page,
+                limit: pageSize,
+                search: searchTerm
+            });
+            const { vehicles, total } = res.data || {};
+            setVehicles(vehicles || []);
+            setCount(total || 0);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch vehicles');
         } finally {
@@ -34,7 +42,7 @@ const VehicleMasterPage: React.FC = () => {
 
     useEffect(() => {
         fetchVehicles();
-    }, []);
+    }, [page, pageSize, searchTerm]);
 
     const handleAdd = () => {
         setSelectedVehicle(null);
@@ -104,11 +112,7 @@ const VehicleMasterPage: React.FC = () => {
         }
     };
 
-    const filteredVehicles = vehicles.filter(v =>
-        v.modelName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.modelCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.manufacturer?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
 
     const columns = [
         {
@@ -174,7 +178,7 @@ const VehicleMasterPage: React.FC = () => {
                         onClick={() => navigate('/company')}
                     />
                     <Title level={4} style={{ margin: 0 }}>
-                        Vehicle Master [{filteredVehicles.length}]
+                        Vehicle Master [{count}]
                     </Title>
                 </Space>
                 <Space>
@@ -205,7 +209,7 @@ const VehicleMasterPage: React.FC = () => {
             <div className={styles.tableContainer}>
                 <Table
                     columns={columns}
-                    dataSource={filteredVehicles}
+                    dataSource={vehicles}
                     loading={loading}
                     rowKey="id"
                     onRow={(record) => ({
@@ -218,10 +222,16 @@ const VehicleMasterPage: React.FC = () => {
                         style: { cursor: 'pointer' }
                     })}
                     pagination={{
+                        current: page,
                         pageSize: pageSize,
+                        total: count,
                         showSizeChanger: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
-                        onShowSizeChange: (_, size) => setPageSize(size),
+                        onChange: (p) => setPage(p),
+                        onShowSizeChange: (_, size) => {
+                            setPageSize(size);
+                            setPage(1);
+                        },
                     }}
                     className={styles.vehicleTable}
                 />

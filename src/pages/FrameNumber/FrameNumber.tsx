@@ -18,12 +18,20 @@ const FrameNumberPage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
     const [pageSize, setPageSize] = useState(10);
+    const [page, setPage] = useState(1);
+    const [count, setCount] = useState(0);
 
     const fetchFrameNumbers = async () => {
         setLoading(true);
         try {
-            const res = await getFrameNumbers();
-            setFrameNumbers(res.data?.data || res.data || []);
+            const res = await getFrameNumbers({
+                page,
+                limit: pageSize,
+                search: searchTerm
+            });
+            const { frameNumbers, total } = res.data || {};
+            setFrameNumbers(frameNumbers || []);
+            setCount(total || 0);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch frame numbers');
         } finally {
@@ -33,7 +41,7 @@ const FrameNumberPage: React.FC = () => {
 
     useEffect(() => {
         fetchFrameNumbers();
-    }, []);
+    }, [page, pageSize, searchTerm]);
 
     const handleAdd = () => {
         setSelectedFrame(null);
@@ -83,11 +91,7 @@ const FrameNumberPage: React.FC = () => {
         }
     };
 
-    const filteredFrames = frameNumbers.filter(f =>
-        f.manufacturer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.inferredField?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.inputValue?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
 
     const columns = [
         {
@@ -148,7 +152,7 @@ const FrameNumberPage: React.FC = () => {
                         onClick={() => navigate('/company')}
                     />
                     <Title level={4} style={{ margin: 0 }}>
-                        Frame Number Rules [{filteredFrames.length}]
+                        Frame Number Rules [{count}]
                     </Title>
                 </Space>
                 <Space>
@@ -173,13 +177,20 @@ const FrameNumberPage: React.FC = () => {
             <div className={styles.tableContainer}>
                 <Table
                     columns={columns}
-                    dataSource={filteredFrames}
+                    dataSource={frameNumbers}
                     loading={loading}
                     rowKey="id"
                     pagination={{
+                        current: page,
                         pageSize: pageSize,
+                        total: count,
                         showSizeChanger: true,
-                        onShowSizeChange: (_, size) => setPageSize(size),
+                        pageSizeOptions: ['10', '20', '50', '100'],
+                        onChange: (p) => setPage(p),
+                        onShowSizeChange: (_, size) => {
+                            setPageSize(size);
+                            setPage(1);
+                        },
                     }}
                     className={styles.frameTable}
                 />

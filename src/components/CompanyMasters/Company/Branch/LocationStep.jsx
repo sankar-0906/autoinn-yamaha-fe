@@ -45,15 +45,12 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
 
         // Fetch Manufacturers
         axiosInstance.get('/manufacturer').then(res => {
-            if (res.data.success) setManufacturers(res.data.data || []);
+            if (res.data.success) setManufacturers(res.data.data.manufacturers || []);
         });
 
-        // Fetch Employees - matches autoinn exactly
+        // Fetch Employees
         axiosInstance.get('/user').then(res => {
-            let { data } = res;
-            if (data.code === 200) {
-                setEmployees(data.data.users || []);
-            }
+            if (res.data.success) setEmployees(res.data.data.users || []);
         });
     }, []);
 

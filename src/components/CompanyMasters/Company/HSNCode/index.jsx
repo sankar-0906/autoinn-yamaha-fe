@@ -12,7 +12,7 @@ import {
     DownOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
-import axiosInstance from "../../../../api/axiosInstance";
+import { getHsns, createHsn, updateHsn, deleteHsn } from "../../../../api/hsn";
 
 // Components
 import HSNTable from "./HSNTable";
@@ -33,55 +33,50 @@ const HSNCode = () => {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('')
 
-    // Access control placeholders (can be linked to global state later)
+    // Access control placeholders
     const createAccess = true;
     const modifyAccess = true;
     const deleteAccess = true;
-
 
     useEffect(() => {
         fetchData();
     }, [page, limit, search]);
 
-    const fetchData = () => {
+    const fetchData = async () => {
         setSpinning(true);
-        axiosInstance
-            .post("/hsn/get", { page, limit, searchString: search })
-            .then((res) => {
-                setSpinning(false);
-                const { data } = res;
-                if (data.success) {
-                    setCount(data.data.count || 0);
-                    setData(data.data.hsn || []);
-                } else {
-                    message.error(data.message || "Unable to fetch HSN");
-                }
-            })
-            .catch((error) => {
-                setSpinning(false);
-                console.error("Error in HSN Code fetch: ", error);
-                message.error("Unable to fetch HSN");
-            });
+        try {
+            const res = await getHsns({ page, limit, searchString: search });
+            if (res.success) {
+                const { hsns, total } = res.data || {};
+                setData(hsns || []);
+                setCount(total || 0);
+            } else {
+                message.error(res.message || "Unable to fetch HSN");
+            }
+        } catch (error) {
+            console.error("Error in HSN Code fetch: ", error);
+            message.error("Unable to fetch HSN");
+        } finally {
+            setSpinning(false);
+        }
     };
 
-    const deleteData = (id) => {
+    const handleDelete = async (id) => {
         setSpinning(true);
-        axiosInstance
-            .delete(`/hsn/${id}`)
-            .then((res) => {
-                setSpinning(false);
-                if (res.data.success) {
-                    message.success("HSN Code deleted successfully");
-                    fetchData();
-                } else {
-                    message.error(res.data.message || "Unable to delete HSN Code");
-                }
-            })
-            .catch((error) => {
-                console.error("Error on HSN Code delete: ", error);
-                setSpinning(false);
-                message.error("Unable to delete HSN Code");
-            });
+        try {
+            const res = await deleteHsn(id);
+            if (res.success) {
+                message.success("HSN Code deleted successfully");
+                fetchData();
+            } else {
+                message.error(res.message || "Unable to delete HSN Code");
+            }
+        } catch (error) {
+            console.error("Error on HSN Code delete: ", error);
+            message.error("Unable to delete HSN Code");
+        } finally {
+            setSpinning(false);
+        }
     };
 
     const saveHsn = async (hsn) => {
@@ -89,16 +84,17 @@ const HSNCode = () => {
         try {
             let response;
             if (hsn.id) {
-                response = await axiosInstance.put(`/hsn/${hsn.id}`, hsn);
+                response = await updateHsn(hsn.id, hsn);
             } else {
-                response = await axiosInstance.post("/hsn", hsn);
+                response = await createHsn(hsn);
             }
 
-            if (response.data.success) {
+            if (response.success) {
                 message.success(`HSN Code ${hsn.id ? 'updated' : 'added'} successfully`);
+                setAddFlag(false);
                 fetchData();
             } else {
-                message.error(response.data.message || "Unable to save HSN Code");
+                message.error(response.message || "Unable to save HSN Code");
             }
         } catch (error) {
             console.error("Error on HSN Code save: ", error);
@@ -180,7 +176,7 @@ const HSNCode = () => {
                     setAddFlag(true);
                 }}
                 dataSource={dataSource}
-                delete={deleteData}
+                delete={handleDelete}
                 spinner={spinning}
                 modify={modifyAccess}
                 deleteAccess={deleteAccess}

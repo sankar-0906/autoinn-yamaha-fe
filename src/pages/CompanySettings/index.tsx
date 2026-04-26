@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axiosInstance from '../../api/axiosInstance';
 import companyModules from '../../JSONFiles/companyModules.json';
+// @ts-ignore
 import BranchPage from '../../components/CompanyMasters/Company/Branch';
 
 import styles from './CompanySettings.module.css';

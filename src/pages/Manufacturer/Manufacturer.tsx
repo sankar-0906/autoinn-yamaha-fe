@@ -19,12 +19,20 @@ const ManufacturerPage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
     const [pageSize, setPageSize] = useState(10);
+    const [page, setPage] = useState(1);
+    const [count, setCount] = useState(0);
 
     const fetchManufacturers = async () => {
         setLoading(true);
         try {
-            const res = await getManufacturers();
-            setManufacturers(res.data || []);
+            const res = await getManufacturers({
+                page,
+                limit: pageSize,
+                search: searchTerm
+            });
+            const { manufacturers, total } = res.data || {};
+            setManufacturers(manufacturers || []);
+            setCount(total || 0);
         } catch (error: any) {
             message.error(error.message || 'Failed to fetch manufacturers');
         } finally {
@@ -34,7 +42,7 @@ const ManufacturerPage: React.FC = () => {
 
     useEffect(() => {
         fetchManufacturers();
-    }, []);
+    }, [page, pageSize, searchTerm]);
 
     const handleAdd = () => {
         setSelectedManufacturer(null);
@@ -92,10 +100,7 @@ const ManufacturerPage: React.FC = () => {
         }
     };
 
-    const filteredManufacturers = manufacturers.filter(m =>
-        m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
 
     const columns = [
         {
@@ -143,7 +148,7 @@ const ManufacturerPage: React.FC = () => {
                         onClick={() => navigate('/company')}
                     />
                     <Title level={4} style={{ margin: 0 }}>
-                        Manufacturer [{filteredManufacturers.length}]
+                        Manufacturer [{count}]
                     </Title>
                 </Space>
                 <Space>
@@ -168,7 +173,7 @@ const ManufacturerPage: React.FC = () => {
             <div className={styles.tableContainer}>
                 <Table
                     columns={columns}
-                    dataSource={filteredManufacturers}
+                    dataSource={manufacturers}
                     loading={loading}
                     rowKey="id"
                     onRow={(record) => ({
@@ -181,10 +186,16 @@ const ManufacturerPage: React.FC = () => {
                         style: { cursor: 'pointer' }
                     })}
                     pagination={{
+                        current: page,
                         pageSize: pageSize,
+                        total: count,
                         showSizeChanger: true,
                         pageSizeOptions: ['10', '20', '50', '100'],
-                        onShowSizeChange: (_, size) => setPageSize(size),
+                        onChange: (p) => setPage(p),
+                        onShowSizeChange: (_, size) => {
+                            setPageSize(size);
+                            setPage(1);
+                        },
                         locale: { items_per_page: '' }
                     }}
                     className={styles.manufacturerTable}
