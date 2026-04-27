@@ -109,9 +109,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = () => {
         removeToken();
-        setUser(null);
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        window.location.href = '/yamaha/login';
     };
 
     return (

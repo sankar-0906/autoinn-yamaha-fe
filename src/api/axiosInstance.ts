@@ -39,7 +39,8 @@ axiosInstance.interceptors.response.use(
       if (status === 401) {
         message.error('Session expired. Please log in again.');
         removeToken();
-        window.location.href = '/login'; // adjust route if needed
+        localStorage.removeItem('user');
+        window.location.href = '/yamaha/login';
       }
 
       // Common 4xx/5xx handling
