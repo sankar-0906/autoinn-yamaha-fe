@@ -243,7 +243,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                     dealerName: data["NAME"],
                     address: data["ADDRESS"],
                     deliveryAddress: data["ADDRESS OF DELIVERY"],
-                    invoiceNo: data["INVOICE NO"],
+                    invoiceNo: data["INVOICE NO"]?.toUpperCase(),
                     date: parseDate(data["DATE"]),
                     placeOfSupply: data["PLACE OF SUPPLY"],
                     daNumber: data["DA NUMBER"],
@@ -271,6 +271,22 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
     const handleSave = async () => {
         try {
             const values = await form.validateFields();
+
+            // Validate vehicles list
+            const vehicles = extractedData?.VEHICLES || [];
+            if (vehicles.length === 0) {
+                message.error('Please add at least one vehicle');
+                return;
+            }
+
+            for (let i = 0; i < vehicles.length; i++) {
+                const v = vehicles[i];
+                if (!v.modelCode || !v.colorCode || !v.chassisNo || !v.engineNo) {
+                    message.error(`Please complete all details for vehicle #${i + 1} (Model, Color, Chassis No, and Engine No)`);
+                    return;
+                }
+            }
+
             setLoading(true);
             setProcessingStep(isEditMode ? 'Updating Record...' : 'Saving to Database...');
 
@@ -307,9 +323,16 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
     };
 
     const handleCellChange = async (value: string, rowIndex: number, dataIndex: string) => {
-        const upperValue = value?.toUpperCase() || '';
+        let processedValue = value?.toUpperCase() || '';
+
+        // Enforce alphanumeric and max length for identifiers
+        if (dataIndex === 'chassisNo' || dataIndex === 'engineNo') {
+            processedValue = processedValue.replace(/[^A-Z0-9]/g, '');
+            if (processedValue.length > 17) processedValue = processedValue.slice(0, 17);
+        }
+
         const updated = [...extractedData["VEHICLES"]];
-        const row = { ...updated[rowIndex], [dataIndex]: upperValue };
+        const row = { ...updated[rowIndex], [dataIndex]: processedValue };
 
         // If model changes, clear color and fetch new color list
         if (dataIndex === 'modelCode') {
@@ -371,6 +394,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                         setEditingCell(null);
                     }}
                     style={{ textTransform: 'uppercase' }}
+                    maxLength={(dataIndex === 'chassisNo' || dataIndex === 'engineNo') ? 17 : undefined}
                 />
             ) : (
                 <div
@@ -511,10 +535,16 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                             <Form.Item name="dealerName" label="Dealer Name"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="invoiceNo" label="Invoice No"><Input /></Form.Item>
+                            <Form.Item
+                                name="invoiceNo"
+                                label="Invoice No"
+                                getValueFromEvent={(e) => e.target.value.toUpperCase()}
+                            >
+                                <Input style={{ textTransform: 'uppercase' }} />
+                            </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item>
+                            <Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" disabledDate={(current) => current && current > dayjs().endOf('day')} /></Form.Item>
                         </Col>
 
                         <Col span={12}>
@@ -528,10 +558,16 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                             <Form.Item name="placeOfSupply" label="Place of Supply"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="daNumber" label="DA Number"><Input /></Form.Item>
+                            <Form.Item
+                                name="daNumber"
+                                label="DA Number"
+                                getValueFromEvent={(e) => e.target.value.replace(/[^0-9]/g, '')}
+                            >
+                                <Input />
+                            </Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="daDate" label="DA Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item>
+                            <Form.Item name="daDate" label="DA Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" disabledDate={(current) => current && current > dayjs().endOf('day')} /></Form.Item>
                         </Col>
 
                         <Col span={8}>
