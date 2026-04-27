@@ -242,7 +242,7 @@ const InwardImportPage: React.FC = () => {
                     // dealerName: data["NAME"], // User requested NOT to auto-fill dealer name
                     address: data["ADDRESS"],
                     deliveryAddress: data["ADDRESS OF DELIVERY"],
-                    invoiceNo: data["INVOICE NO"],
+                    invoiceNo: data["INVOICE NO"]?.toUpperCase(),
                     date: parseDate(data["DATE"]),
                     placeOfSupply: data["PLACE OF SUPPLY"],
                     daNumber: data["DA NUMBER"],
@@ -277,6 +277,22 @@ const InwardImportPage: React.FC = () => {
     const handleSave = async () => {
         try {
             const values = await form.validateFields();
+
+            // Validate vehicles list
+            const vehicles = extractedData?.VEHICLES || [];
+            if (vehicles.length === 0) {
+                message.error('Please add at least one vehicle');
+                return;
+            }
+
+            for (let i = 0; i < vehicles.length; i++) {
+                const v = vehicles[i];
+                if (!v.modelCode || !v.colorCode || !v.chassisNo || !v.engineNo) {
+                    message.error(`Please complete all details for vehicle #${i + 1} (Model, Color, Chassis No, and Engine No)`);
+                    return;
+                }
+            }
+
             setLoading(true);
             setProcessingStep(isEditMode ? 'Updating Record...' : 'Saving to Database...');
 
@@ -304,15 +320,22 @@ const InwardImportPage: React.FC = () => {
     };
 
     const handleCellChange = async (value: string, rowIndex: number, dataIndex: string) => {
-        const upperValue = value?.toUpperCase() || '';
+        let processedValue = value?.toUpperCase() || '';
+
+        // Enforce alphanumeric and max length for identifiers
+        if (dataIndex === 'chassisNo' || dataIndex === 'engineNo') {
+            processedValue = processedValue.replace(/[^A-Z0-9]/g, '');
+            if (processedValue.length > 17) processedValue = processedValue.slice(0, 17);
+        }
+
         const updated = [...extractedData["VEHICLES"]];
-        const row = { ...updated[rowIndex], [dataIndex]: upperValue };
+        const row = { ...updated[rowIndex], [dataIndex]: processedValue };
 
         // If model changes, clear color and fetch new color list
         if (dataIndex === 'modelCode') {
             row.colorCode = ''; // Reset color
             try {
-                const colorRes = await getColorsByModel(upperValue);
+                const colorRes = await getColorsByModel(processedValue);
                 setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: colorRes.data || [] }));
             } catch (e) {
                 console.error('Failed to fetch colors for row', rowIndex, e);
@@ -364,6 +387,7 @@ const InwardImportPage: React.FC = () => {
                     value={record[dataIndex]}
                     onChange={(e) => handleCellChange(e.target.value, rowIndex, dataIndex)}
                     style={{ borderRadius: 0, textTransform: 'uppercase' }}
+                    maxLength={(dataIndex === 'chassisNo' || dataIndex === 'engineNo') ? 17 : undefined}
                 />
             );
         }
@@ -593,15 +617,31 @@ const InwardImportPage: React.FC = () => {
                                     </Select>
                                 </Form.Item>
                             </Col>
-                            <Col span={8}><Form.Item name="invoiceNo" label="Invoice No"><Input /></Form.Item></Col>
-                            <Col span={8}><Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item></Col>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="invoiceNo"
+                                    label="Invoice No"
+                                    getValueFromEvent={(e) => e.target.value.toUpperCase()}
+                                >
+                                    <Input style={{ textTransform: 'uppercase' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={8}><Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" disabledDate={(current) => current && current > dayjs().endOf('day')} /></Form.Item></Col>
 
                             <Col span={12}><Form.Item name="address" label="Billing Address"><Input.TextArea rows={2} /></Form.Item></Col>
                             <Col span={12}><Form.Item name="deliveryAddress" label="Delivery Address"><Input.TextArea rows={2} /></Form.Item></Col>
 
                             <Col span={8}><Form.Item name="placeOfSupply" label="Place of Supply"><Input /></Form.Item></Col>
-                            <Col span={8}><Form.Item name="daNumber" label="DA Number"><Input /></Form.Item></Col>
-                            <Col span={8}><Form.Item name="daDate" label="DA Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item></Col>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="daNumber"
+                                    label="DA Number"
+                                    getValueFromEvent={(e) => e.target.value.replace(/[^0-9]/g, '')}
+                                >
+                                    <Input />
+                                </Form.Item>
+                            </Col>
+                            <Col span={8}><Form.Item name="daDate" label="DA Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" disabledDate={(current) => current && current > dayjs().endOf('day')} /></Form.Item></Col>
 
                             <Col span={8}><Form.Item name="modeOfTransport" label="Mode of Transport"><Input /></Form.Item></Col>
                             <Col span={8}><Form.Item name="transporter" label="Transporter"><Input /></Form.Item></Col>

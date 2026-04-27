@@ -21,17 +21,6 @@
     color: white !important;
 }
 
-.topSummary {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-}
-
-.totalCost {
-    font-size: 16px;
-    font-weight: 600;
-    color: white;
-}
 
 .controls {
     display: flex;

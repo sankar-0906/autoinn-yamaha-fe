@@ -117,10 +117,6 @@ const VehicleInventory: React.FC = () => {
                     </Title>
                 </div>
 
-                <div className={styles.topSummary}>
-                    <Text className={styles.totalCost}>Total Cost: {counts.totalCost || '0'}</Text>
-                </div>
-
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Input
                         placeholder="Search Inventory"
