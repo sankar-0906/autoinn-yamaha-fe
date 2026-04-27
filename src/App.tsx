@@ -71,7 +71,7 @@ const RootRedirect: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/yamaha">
         <Routes>
           {/* Internal Redirector */}
           <Route path="/" element={<RootRedirect />} />
