@@ -49,8 +49,16 @@ const LocationStep = ({ form, data, setData, editable, onContactsChange }) => {
         });
 
         // Fetch Employees
-        axiosInstance.get('/user').then(res => {
-            if (res.data.success) setEmployees(res.data.data.users || []);
+        axiosInstance.get('/employee', { params: { limit: 1000 } }).then(res => {
+            let fetchedEmployees = [];
+            if (res.data.code === 200) {
+                fetchedEmployees = res.data.data?.users || res.data.data?.employees || [];
+            } else if (res.data.success) {
+                fetchedEmployees = res.data.data?.users || res.data.data?.window || res.data.data || [];
+            }
+            // Filter out non-active employees
+            const activeEmployees = fetchedEmployees.filter(e => e.status !== false && String(e.status).toLowerCase() !== 'inactive');
+            setEmployees(activeEmployees);
         });
     }, []);
 

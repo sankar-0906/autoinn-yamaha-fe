@@ -20,6 +20,7 @@ interface DealerMasterModalProps {
 
 const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, onSave, initialValues, loading, readOnly }) => {
     const [form] = Form.useForm();
+    const dealerType = Form.useWatch('dealerType', form);
     const [countries, setCountries] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
@@ -98,6 +99,19 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
         }
     }, [open, initialValues, form]);
 
+    useEffect(() => {
+        if (open && !initialValues && countries.length > 0) {
+            const address = form.getFieldValue('address') || {};
+            if (!address.countryId) {
+                const india = countries.find(c => c.name.toLowerCase() === 'india' || c.name.toLowerCase() === 'ind');
+                if (india) {
+                    form.setFieldsValue({ address: { ...address, countryId: india.id } });
+                    handleCountryChange(india.id, 'billing');
+                }
+            }
+        }
+    }, [open, initialValues, countries, form]);
+
     const handleCountryChange = async (value: string, type: 'billing' | number) => {
         try {
             const res = await getStates(value);
@@ -144,7 +158,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
     };
 
     const handleGstChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value.toUpperCase();
+        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
         form.setFieldsValue({ GSTIN: val });
 
         if (val.length === 15) {
@@ -217,7 +231,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                         </Form.Item>
                     </Col>
                     <Col span={12}>
-                        <Form.Item name="dealerType" label={<span className={styles.formLabel}>GST Dealer Type</span>}>
+                        <Form.Item name="dealerType" label={<span className={styles.formLabel}>GST Dealer Type</span>} rules={[{ required: true, message: 'Dealer Type is required' }]}>
                             <Select placeholder="Select GST Dealer Type" disabled={readOnly} allowClear>
                                 <Option value="Registered Dealer">Registered Dealer</Option>
                                 <Option value="Unregistered Dealer">Unregistered Dealer</Option>
@@ -237,10 +251,28 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                         </Form.Item>
                     </Col>
                     <Col span={12}>
-                        <Form.Item name="GSTIN" label={<span className={styles.formLabel}>GSTIN</span>}>
+                        <Form.Item
+                            name="GSTIN"
+                            label={<span className={styles.formLabel}>GSTIN</span>}
+                            required={dealerType === 'Registered Dealer' || dealerType === 'Composition Dealer'}
+                            rules={[
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        const dt = getFieldValue('dealerType');
+                                        if ((dt === 'Registered Dealer' || dt === 'Composition Dealer') && !value) {
+                                            return Promise.reject(new Error('GSTIN is required for this Dealer Type'));
+                                        }
+                                        if (value && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(value)) {
+                                            return Promise.reject(new Error('Invalid GST format'));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                })
+                            ]}
+                        >
                             <Input
                                 placeholder="Enter GSTIN"
-                                disabled={readOnly}
+                                disabled={readOnly || dealerType === 'Unregistered Dealer'}
                                 maxLength={15}
                                 onChange={handleGstChange}
                                 style={{ textTransform: 'uppercase' }}
@@ -259,7 +291,11 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
 
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Form.Item name="email" label={<span className={styles.formLabel}>Email</span>}>
+                        <Form.Item
+                            name="email"
+                            label={<span className={styles.formLabel}>Email</span>}
+                            rules={[{ type: 'email', message: 'Enter a valid email address' }]}
+                        >
                             <Input placeholder="Enter Email" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -289,7 +325,15 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                         </Form.Item>
                     </Col>
                     <Col span={12}>
-                        <Form.Item name={['address', 'locality']} label={<span className={styles.formLabel}>Locality</span>} rules={[{ required: true }]}>
+                        <Form.Item
+                            name={['address', 'locality']}
+                            label={<span className={styles.formLabel}>Locality</span>}
+                            rules={[
+                                { required: true, message: 'Required' },
+                                { pattern: /^[a-zA-Z0-9\s,.-]+$/, message: 'Invalid characters in Locality' }
+                            ]}
+                            normalize={(value) => (value || '').replace(/[^a-zA-Z0-9\s,.-]/g, '')}
+                        >
                             <Input placeholder="Locality" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -297,29 +341,63 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
 
                 <Row gutter={24}>
                     <Col span={6}>
-                        <Form.Item name={['address', 'countryId']} label={<span className={styles.formLabel}>Country</span>}>
-                            <Select placeholder="Select" disabled={readOnly} allowClear onChange={(v) => handleCountryChange(v, 'billing')}>
+                        <Form.Item name={['address', 'countryId']} label={<span className={styles.formLabel}>Country</span>} rules={[{ required: true, message: 'Required' }]}>
+                            <Select
+                                placeholder="Select"
+                                disabled={readOnly}
+                                allowClear
+                                showSearch
+                                filterOption={(input, option) =>
+                                    (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                }
+                                onChange={(v) => handleCountryChange(v, 'billing')}
+                            >
                                 {countries.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
                             </Select>
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name={['address', 'stateId']} label={<span className={styles.formLabel}>State</span>}>
-                            <Select placeholder="Select" disabled={readOnly} allowClear onChange={(v) => handleStateChange(v, 'billing')}>
+                        <Form.Item name={['address', 'stateId']} label={<span className={styles.formLabel}>State</span>} rules={[{ required: true, message: 'Required' }]}>
+                            <Select
+                                placeholder="Select"
+                                disabled={readOnly}
+                                allowClear
+                                showSearch
+                                filterOption={(input, option) =>
+                                    (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                }
+                                onChange={(v) => handleStateChange(v, 'billing')}
+                            >
                                 {states.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}
                             </Select>
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name={['address', 'cityId']} label={<span className={styles.formLabel}>City</span>}>
-                            <Select placeholder="Select" disabled={readOnly} allowClear>
+                        <Form.Item name={['address', 'cityId']} label={<span className={styles.formLabel}>City</span>} rules={[{ required: true, message: 'Required' }]}>
+                            <Select
+                                placeholder="Select"
+                                disabled={readOnly}
+                                allowClear
+                                showSearch
+                                filterOption={(input, option) =>
+                                    (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                }
+                            >
                                 {cities.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
                             </Select>
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name={['address', 'pincode']} label={<span className={styles.formLabel}>Pincode</span>} rules={[{ required: true }]}>
-                            <Input placeholder="Pincode" disabled={readOnly} />
+                        <Form.Item
+                            name={['address', 'pincode']}
+                            label={<span className={styles.formLabel}>Pincode</span>}
+                            rules={[
+                                { required: true, message: 'Required' },
+                                { pattern: /^[1-9][0-9]{5}$/, message: 'Invalid Pincode' }
+                            ]}
+                            normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                        >
+                            <Input placeholder="Pincode" maxLength={6} disabled={readOnly} />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -350,13 +428,31 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                     </Row>
                                     <Row gutter={24}>
                                         <Col span={8}>
-                                            <Form.Item {...restField} name={[name, 'locality']} label={<span className={styles.formLabel}>Locality</span>} rules={[{ required: true }]}>
+                                            <Form.Item
+                                                {...restField}
+                                                name={[name, 'locality']}
+                                                label={<span className={styles.formLabel}>Locality</span>}
+                                                rules={[
+                                                    { required: true, message: 'Required' },
+                                                    { pattern: /^[a-zA-Z0-9\s,.-]+$/, message: 'Invalid characters in Locality' }
+                                                ]}
+                                                normalize={(value) => (value || '').replace(/[^a-zA-Z0-9\s,.-]/g, '')}
+                                            >
                                                 <Input placeholder="Locality" disabled={readOnly} />
                                             </Form.Item>
                                         </Col>
                                         <Col span={8}>
-                                            <Form.Item {...restField} name={[name, 'pincode']} label={<span className={styles.formLabel}>Pincode</span>} rules={[{ required: true }]}>
-                                                <Input placeholder="Pincode" disabled={readOnly} />
+                                            <Form.Item
+                                                {...restField}
+                                                name={[name, 'pincode']}
+                                                label={<span className={styles.formLabel}>Pincode</span>}
+                                                rules={[
+                                                    { required: true, message: 'Required' },
+                                                    { pattern: /^[1-9][0-9]{5}$/, message: 'Invalid Pincode' }
+                                                ]}
+                                                normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                                            >
+                                                <Input placeholder="Pincode" maxLength={6} disabled={readOnly} />
                                             </Form.Item>
                                         </Col>
                                         <Col span={8}>
@@ -369,22 +465,48 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                     </Row>
                                     <Row gutter={24}>
                                         <Col span={8}>
-                                            <Form.Item {...restField} name={[name, 'countryId']} label={<span className={styles.formLabel}>Country</span>}>
-                                                <Select placeholder="Select" disabled={readOnly} allowClear onChange={(v) => handleCountryChange(v, name)}>
+                                            <Form.Item {...restField} name={[name, 'countryId']} label={<span className={styles.formLabel}>Country</span>} rules={[{ required: true, message: 'Required' }]}>
+                                                <Select
+                                                    placeholder="Select"
+                                                    disabled={readOnly}
+                                                    allowClear
+                                                    showSearch
+                                                    filterOption={(input, option) =>
+                                                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                                    }
+                                                    onChange={(v) => handleCountryChange(v, name)}
+                                                >
                                                     {countries.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
                                                 </Select>
                                             </Form.Item>
                                         </Col>
                                         <Col span={8}>
-                                            <Form.Item {...restField} name={[name, 'stateId']} label={<span className={styles.formLabel}>State</span>}>
-                                                <Select placeholder="Select" disabled={readOnly} allowClear onChange={(v) => handleStateChange(v, name)}>
+                                            <Form.Item {...restField} name={[name, 'stateId']} label={<span className={styles.formLabel}>State</span>} rules={[{ required: true, message: 'Required' }]}>
+                                                <Select
+                                                    placeholder="Select"
+                                                    disabled={readOnly}
+                                                    allowClear
+                                                    showSearch
+                                                    filterOption={(input, option) =>
+                                                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                                    }
+                                                    onChange={(v) => handleStateChange(v, name)}
+                                                >
                                                     {states.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}
                                                 </Select>
                                             </Form.Item>
                                         </Col>
                                         <Col span={8}>
-                                            <Form.Item {...restField} name={[name, 'cityId']} label={<span className={styles.formLabel}>City</span>}>
-                                                <Select placeholder="Select" disabled={readOnly} allowClear>
+                                            <Form.Item {...restField} name={[name, 'cityId']} label={<span className={styles.formLabel}>City</span>} rules={[{ required: true, message: 'Required' }]}>
+                                                <Select
+                                                    placeholder="Select"
+                                                    disabled={readOnly}
+                                                    allowClear
+                                                    showSearch
+                                                    filterOption={(input, option) =>
+                                                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                                    }
+                                                >
                                                     {cities.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
                                                 </Select>
                                             </Form.Item>

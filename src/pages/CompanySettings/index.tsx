@@ -136,7 +136,14 @@ const CompanySettings: React.FC = () => {
                                                 </Form.Item>
                                             </Col>
                                             <Col span={12}>
-                                                <Form.Item name="email" label="Email">
+                                                <Form.Item
+                                                    name="email"
+                                                    label="Email"
+                                                    rules={[
+                                                        { required: true, message: 'Email is required' },
+                                                        { type: 'email', message: 'Invalid email format' }
+                                                    ]}
+                                                >
                                                     <Input placeholder="Enter Email" />
                                                 </Form.Item>
                                             </Col>
@@ -146,22 +153,57 @@ const CompanySettings: React.FC = () => {
                                                 </Form.Item>
                                             </Col>
                                             <Col span={12}>
-                                                <Form.Item name="phone" label="Phone">
-                                                    <Input placeholder="Enter Phone" />
+                                                <Form.Item
+                                                    name="phone"
+                                                    label="Phone"
+                                                    rules={[
+                                                        { required: true, message: 'Phone is required' },
+                                                        { pattern: /^\d{10}$/, message: 'Phone number must be exactly 10 digits' }
+                                                    ]}
+                                                    normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                                                >
+                                                    <Input placeholder="Enter Phone" maxLength={10} />
                                                 </Form.Item>
                                             </Col>
                                             <Col span={12}>
-                                                <Form.Item name="cin" label="CIN">
-                                                    <Input placeholder="Enter CIN" />
+                                                <Form.Item
+                                                    name="cin"
+                                                    label="CIN"
+                                                    rules={[
+                                                        { required: true, message: 'CIN is required' },
+                                                        { pattern: /^[A-Z0-9]{21}$/, message: 'CIN must be exactly 21 alphanumeric characters' }
+                                                    ]}
+                                                    normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                                                >
+                                                    <Input placeholder="Enter CIN" maxLength={21} />
                                                 </Form.Item>
                                             </Col>
                                             <Col span={12}>
-                                                <Form.Item name="pan" label="PAN">
-                                                    <Input placeholder="Enter PAN" />
+                                                <Form.Item
+                                                    name="pan"
+                                                    label="PAN"
+                                                    rules={[
+                                                        { required: true, message: 'PAN is required' },
+                                                        { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, message: 'Invalid PAN format' }
+                                                    ]}
+                                                    normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                                                >
+                                                    <Input placeholder="Enter PAN" maxLength={10} />
                                                 </Form.Item>
                                             </Col>
                                             <Col span={24}>
-                                                <Form.Item name="contactPerson" label="Contact Person">
+                                                <Form.Item
+                                                    name="contactPerson"
+                                                    label="Contact Person"
+                                                    rules={[
+                                                        { required: true, message: 'Contact Person is required' },
+                                                        { pattern: /^[a-zA-Z\s]+$/, message: 'Only alphabets are allowed' }
+                                                    ]}
+                                                    normalize={(value) => {
+                                                        const val = (value || '').replace(/[^a-zA-Z\s]/g, '');
+                                                        return val.replace(/\b\w+/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+                                                    }}
+                                                >
                                                     <Input placeholder="Enter Contact Person" />
                                                 </Form.Item>
                                             </Col>
