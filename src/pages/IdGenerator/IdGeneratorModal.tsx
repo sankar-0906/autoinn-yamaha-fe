@@ -83,12 +83,25 @@ const IdGeneratorModal: React.FC<IdGeneratorModalProps> = ({ open, onClose, onSa
 
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Form.Item name="text" label={<span className={styles.formLabel}>Static text parameter</span>} rules={[{ required: true }]}>
-                            <Input placeholder="e.g. CNB" />
+                        <Form.Item
+                            name="text"
+                            label={<span className={styles.formLabel}>Static text parameter</span>}
+                            rules={[{ required: true, message: 'Required' }]}
+                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                        >
+                            <Input placeholder="e.g. CNB" style={{ textTransform: 'uppercase' }} />
                         </Form.Item>
                     </Col>
                     <Col span={12}>
-                        <Form.Item name="count" label={<span className={styles.formLabel}>Upcoming ID</span>}>
+                        <Form.Item
+                            name="count"
+                            label={<span className={styles.formLabel}>Upcoming ID</span>}
+                            rules={[
+                                { required: true, message: 'Required' },
+                                { pattern: /^[0-9]+$/, message: 'Only numbers allowed' }
+                            ]}
+                            normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                        >
                             <Input placeholder="Enter count" disabled={!!initialValues} />
                         </Form.Item>
                     </Col>

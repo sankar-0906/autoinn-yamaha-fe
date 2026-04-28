@@ -31,8 +31,8 @@ const VehicleInventory: React.FC = () => {
 
     const fetchDealers = async () => {
         try {
-            const res = await getAllDealers();
-            setDealers(res.data?.data || []);
+            const res = await getAllDealers({ limit: 1000 });
+            setDealers(res.data?.dealers || res.data?.data || []);
         } catch (error) {
             console.error('Failed to fetch dealers', error);
         }

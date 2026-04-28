@@ -332,10 +332,29 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                         </Upload>
                     </Col>
                     <Col span={14}>
-                        <Form.Item name="color" label="Color Name" rules={[{ required: true, message: 'Required' }]}>
+                        <Form.Item
+                            name="color"
+                            label="Color Name"
+                            rules={[
+                                { required: true, message: 'Required' },
+                                { pattern: /^[a-zA-Z0-9\s]+$/, message: 'Only letters and numbers allowed' }
+                            ]}
+                            normalize={(value) => {
+                                const val = (value || '').replace(/[^a-zA-Z0-9\s]/g, '');
+                                return val.replace(/\b\w+/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+                            }}
+                        >
                             <Input placeholder="Color Name" />
                         </Form.Item>
-                        <Form.Item name="code" label="Color Code" rules={[{ required: true, message: 'Required' }]}>
+                        <Form.Item
+                            name="code"
+                            label="Color Code"
+                            rules={[
+                                { required: true, message: 'Required' },
+                                { pattern: /^[A-Z0-9]+$/, message: 'Only uppercase alphanumerics allowed' }
+                            ]}
+                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                        >
                             <Input placeholder="Color Code" />
                         </Form.Item>
                         <Form.Item name="url" label="Image URL">
@@ -363,7 +382,7 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                     <Input placeholder={`Enter ${activeFileTab} Name`} />
                 </Form.Item>
                 <Form.Item name="url" label={`${activeFileTab} URL`} rules={[{ required: true, message: 'Upload required' }]}>
-                    <Input placeholder="Paste URL or upload below" readOnly />
+                    <Input placeholder="Paste URL or upload below" />
                 </Form.Item>
                 <div style={{ textAlign: 'center', marginTop: 16 }}>
                     <Upload
@@ -400,7 +419,15 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
             <Form form={form} layout="vertical">
                 <Row gutter={24} justify="start" align="top">
                     <Col span={12}>
-                        <Form.Item name="modelName" label="Model Name" rules={[{ required: true, message: 'Required' }]}>
+                        <Form.Item
+                            name="modelName"
+                            label="Model Name"
+                            rules={[
+                                { required: true, message: 'Required' },
+                                { pattern: /^[a-zA-Z0-9\s-]+$/, message: 'No special characters allowed except hyphen' }
+                            ]}
+                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9\s-]/g, '')}
+                        >
                             <Input placeholder="e.g. FZ S FI V4 DLX" disabled={readOnly} />
                         </Form.Item>
                         <Form.Item name="manufacturerId" label="Manufacturer Name" rules={[{ required: true, message: 'Required' }]}>
@@ -408,7 +435,15 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                                 {manufacturers.map((m: any) => <Option key={m.id} value={m.id}>{m.name}</Option>)}
                             </Select>
                         </Form.Item>
-                        <Form.Item name="modelCode" label="Model Code" rules={[{ required: true, message: 'Required' }]}>
+                        <Form.Item
+                            name="modelCode"
+                            label="Model Code"
+                            rules={[
+                                { required: true, message: 'Required' },
+                                { pattern: /^[A-Z0-9]+$/, message: 'Only uppercase alphanumerics allowed' }
+                            ]}
+                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                        >
                             <Input placeholder="e.g. BJH500" disabled={readOnly} />
                         </Form.Item>
                     </Col>

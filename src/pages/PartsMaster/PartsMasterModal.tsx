@@ -164,12 +164,25 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
 
                 <Row gutter={24}>
                     <Col span={6}>
-                        <Form.Item name="partNumber" label={<span className={styles.formLabel}>Part No</span>} rules={[{ required: true, message: 'Required' }]}>
+                        <Form.Item
+                            name="partNumber"
+                            label={<span className={styles.formLabel}>Part No</span>}
+                            rules={[
+                                { required: true, message: 'Required' },
+                                { pattern: /^[A-Z0-9-]+$/, message: 'Invalid characters' }
+                            ]}
+                            normalize={(val) => (val || '').toUpperCase().replace(/[^A-Z0-9-]/g, '')}
+                        >
                             <Input placeholder="Part No" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="oldPartNum" label={<span className={styles.formLabel}>Old Part No</span>}>
+                        <Form.Item
+                            name="oldPartNum"
+                            label={<span className={styles.formLabel}>Old Part No</span>}
+                            rules={[{ pattern: /^[A-Z0-9-]+$/, message: 'Invalid characters' }]}
+                            normalize={(val) => (val || '').toUpperCase().replace(/[^A-Z0-9-]/g, '')}
+                        >
                             <Input placeholder="Old Part No" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -179,7 +192,12 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="category" label={<span className={styles.formLabel}>Category</span>}>
+                        <Form.Item
+                            name="category"
+                            label={<span className={styles.formLabel}>Category</span>}
+                            rules={[{ pattern: /^[A-Z0-9\s-]+$/, message: 'Invalid characters' }]}
+                            normalize={(val) => (val || '').toUpperCase().replace(/[^A-Z0-9\s-]/g, '')}
+                        >
                             <Input placeholder="Category" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -187,7 +205,12 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
 
                 <Row gutter={24}>
                     <Col span={6}>
-                        <Form.Item name="largeCategoryName" label={<span className={styles.formLabel}>Large Category Name</span>}>
+                        <Form.Item
+                            name="largeCategoryName"
+                            label={<span className={styles.formLabel}>Large Category Name</span>}
+                            rules={[{ pattern: /^[A-Z0-9\s-]+$/, message: 'Invalid characters' }]}
+                            normalize={(val) => (val || '').toUpperCase().replace(/[^A-Z0-9\s-]/g, '')}
+                        >
                             <Input placeholder="Large Category Name" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -210,8 +233,25 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
 
                 <Row gutter={24}>
                     <Col span={6}>
-                        <Form.Item name="moq" label={<span className={styles.formLabel}>MOQ</span>}>
-                            <InputNumber placeholder="Minimum Order Quantity" style={{ width: '100%' }} disabled={readOnly} />
+                        <Form.Item
+                            name="moq"
+                            label={<span className={styles.formLabel}>MOQ</span>}
+                            rules={[
+                                {
+                                    validator(_, value) {
+                                        if (value !== undefined && value !== null && value < 0) {
+                                            return Promise.reject(new Error('Negative values are not allowed'));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
+                            ]}
+                        >
+                            <InputNumber
+                                placeholder="Minimum Order Quantity"
+                                style={{ width: '100%' }}
+                                disabled={readOnly}
+                            />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
@@ -243,7 +283,15 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="color" label={<span className={styles.formLabel}>Color</span>}>
+                        <Form.Item
+                            name="color"
+                            label={<span className={styles.formLabel}>Color</span>}
+                            rules={[{ pattern: /^[a-zA-Z\s]+$/, message: 'Only alphabets allowed' }]}
+                            normalize={(val) => {
+                                const v = (val || '').replace(/[^a-zA-Z\s]/g, '');
+                                return v.replace(/\b\w+/g, (t: string) => t.charAt(0).toUpperCase() + t.substring(1).toLowerCase());
+                            }}
+                        >
                             <Input placeholder="Color" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -260,7 +308,16 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                     </Col>
                     <Col span={6}>
                         <Form.Item name="hsnId" label={<span className={styles.formLabel}>HSN</span>} rules={[{ required: true, message: 'Required' }]}>
-                            <Select placeholder="Select HSN" disabled={readOnly} allowClear onChange={handleHsnChange}>
+                            <Select
+                                placeholder="Select HSN"
+                                disabled={readOnly}
+                                allowClear
+                                onChange={handleHsnChange}
+                                showSearch
+                                filterOption={(input, option) =>
+                                    (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                }
+                            >
                                 {hsns.map((h: any) => <Option key={h.id} value={h.id}>{h.code}</Option>)}
                             </Select>
                         </Form.Item>
@@ -289,7 +346,20 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="ndp" label={<span className={styles.formLabel}>NDP</span>}>
+                        <Form.Item
+                            name="ndp"
+                            label={<span className={styles.formLabel}>NDP</span>}
+                            rules={[
+                                {
+                                    validator(_, value) {
+                                        if (value !== undefined && value !== null && value < 0) {
+                                            return Promise.reject(new Error('Negative values are not allowed'));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
+                            ]}
+                        >
                             <InputNumber
                                 placeholder="Net Dealer Price"
                                 style={{ width: '100%' }}
@@ -299,7 +369,28 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="mrp" label={<span className={styles.formLabel}>MRP</span>} rules={[{ required: true, message: 'Required' }]}>
+                        <Form.Item
+                            name="mrp"
+                            label={<span className={styles.formLabel}>MRP</span>}
+                            rules={[
+                                { required: true, message: 'Required' },
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        if (value !== undefined && value !== null && value < 0) {
+                                            return Promise.reject(new Error('Negative values are not allowed'));
+                                        }
+                                        const ndpVal = getFieldValue('ndp');
+                                        if (value === undefined || value === null || ndpVal === undefined || ndpVal === null) {
+                                            return Promise.resolve();
+                                        }
+                                        if (value < ndpVal) {
+                                            return Promise.reject(new Error('MRP cannot be less than NDP'));
+                                        }
+                                        return Promise.resolve();
+                                    },
+                                }),
+                            ]}
+                        >
                             <InputNumber
                                 placeholder="MRP"
                                 style={{ width: '100%' }}

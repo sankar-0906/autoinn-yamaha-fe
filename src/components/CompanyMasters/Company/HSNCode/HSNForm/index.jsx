@@ -109,7 +109,17 @@ const HSNForm = (props) => {
                         <Form.Item
                             name="igst"
                             label="IGST (%)"
-                            rules={[{ required: true, message: 'Enter IGST' }]}
+                            rules={[
+                                { required: true, message: 'Enter IGST' },
+                                {
+                                    validator(_, value) {
+                                        if (value !== undefined && value !== null && value !== '' && Number(value) < 0) {
+                                            return Promise.reject(new Error('Negative values are not allowed'));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
+                            ]}
                         >
                             <Input
                                 type="number"
@@ -153,6 +163,16 @@ const HSNForm = (props) => {
                         <Form.Item
                             name="cess"
                             label="CESS (%)"
+                            rules={[
+                                {
+                                    validator(_, value) {
+                                        if (value !== undefined && value !== null && value !== '' && Number(value) < 0) {
+                                            return Promise.reject(new Error('Negative values are not allowed'));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
+                            ]}
                         >
                             <Input
                                 type="number"

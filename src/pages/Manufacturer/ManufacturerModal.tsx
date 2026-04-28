@@ -91,7 +91,7 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
     };
 
     const handleGstChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value.toUpperCase();
+        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
         form.setFieldsValue({ gst: val });
 
         if (val.length === 15) {
@@ -236,7 +236,11 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                     <Form.Item
                                         name="gst"
                                         label="GST Number"
-                                        rules={[{ required: true, message: 'Please enter GST number' }]}
+                                        rules={[
+                                            { required: true, message: 'Please enter GST number' },
+                                            { pattern: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, message: 'Invalid GST format' }
+                                        ]}
+                                        normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
                                         className={styles.compactFormItem}
                                     >
                                         <Input
@@ -353,7 +357,16 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                 rules={[{ required: true, message: 'Please select country' }]}
                                 className={styles.compactFormItem}
                             >
-                                <Select placeholder="Select country" onChange={handleCountryChange} disabled={readOnly} allowClear>
+                                <Select
+                                    showSearch
+                                    filterOption={(input, option) =>
+                                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                    }
+                                    placeholder="Select country"
+                                    onChange={handleCountryChange}
+                                    disabled={readOnly}
+                                    allowClear
+                                >
                                     {countries?.map(c => (
                                         <Option key={c.id} value={c.id}>
                                             {c.name}
@@ -370,7 +383,16 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                 rules={[{ required: true, message: 'Please select state' }]}
                                 className={styles.compactFormItem}
                             >
-                                <Select placeholder="Select state" onChange={handleStateChange} disabled={readOnly} allowClear>
+                                <Select
+                                    showSearch
+                                    filterOption={(input, option) =>
+                                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                    }
+                                    placeholder="Select state"
+                                    onChange={handleStateChange}
+                                    disabled={readOnly}
+                                    allowClear
+                                >
                                     {states?.map(s => (
                                         <Option key={s.id} value={s.id}>
                                             {s.name}
@@ -389,7 +411,15 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                 rules={[{ required: true, message: 'Please select city' }]}
                                 className={styles.compactFormItem}
                             >
-                                <Select placeholder="Select city" disabled={readOnly} allowClear>
+                                <Select
+                                    showSearch
+                                    filterOption={(input, option) =>
+                                        (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                                    }
+                                    placeholder="Select city"
+                                    disabled={readOnly}
+                                    allowClear
+                                >
                                     {cities?.map(ct => (
                                         <Option key={ct.id} value={ct.id}>
                                             {ct.name}
@@ -403,10 +433,14 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                             <Form.Item
                                 name="pincode"
                                 label="Pincode"
-                                rules={[{ required: true, message: 'Please enter pincode' }]}
+                                rules={[
+                                    { required: true, message: 'Please enter pincode' },
+                                    { pattern: /^[1-9][0-9]{5}$/, message: 'Invalid Indian Pincode' }
+                                ]}
+                                normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
                                 className={styles.compactFormItem}
                             >
-                                <Input placeholder="Enter pincode" disabled={readOnly} />
+                                <Input placeholder="Enter pincode" maxLength={6} disabled={readOnly} />
                             </Form.Item>
                         </Col>
                     </Row>

@@ -91,30 +91,74 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
                 <Title level={5} className={styles.sectionTitle}>Employee Details</Title>
                 <Row gutter={24}>
                     <Col span={8}>
-                        <Form.Item name="employeeName" label="Name" rules={[{ required: true, message: 'Please enter name' }]}>
+                        <Form.Item
+                            name="employeeName"
+                            label="Name"
+                            rules={[
+                                { required: true, message: 'Please enter name' },
+                                { pattern: /^[a-zA-Z\s]+$/, message: 'Only alphabets are allowed' }
+                            ]}
+                            normalize={(value) => {
+                                const val = (value || '').replace(/[^a-zA-Z\s]/g, '');
+                                return val.replace(/\b\w+/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+                            }}
+                        >
                             <Input placeholder="Name" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item name="fatherName" label="Father's Name" rules={[{ required: true, message: "Please enter father's name" }]}>
+                        <Form.Item
+                            name="fatherName"
+                            label="Father's Name"
+                            rules={[
+                                { required: true, message: "Please enter father's name" },
+                                { pattern: /^[a-zA-Z\s]+$/, message: 'Only alphabets are allowed' }
+                            ]}
+                            normalize={(value) => {
+                                const val = (value || '').replace(/[^a-zA-Z\s]/g, '');
+                                return val.replace(/\b\w+/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+                            }}
+                        >
                             <Input placeholder="Father's Name" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={8}>
                         <Form.Item name="dateOfBirth" label="DOB" rules={[{ required: true, message: 'Please select date of birth' }]}>
-                            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="DD/MM/YYYY" disabled={readOnly} />
+                            <DatePicker
+                                style={{ width: '100%' }}
+                                format="DD/MM/YYYY"
+                                placeholder="DD/MM/YYYY"
+                                disabled={readOnly}
+                                disabledDate={(current) => current && current > dayjs().endOf('day')}
+                            />
                         </Form.Item>
                     </Col>
                 </Row>
                 <Row gutter={24}>
                     <Col span={8}>
-                        <Form.Item name="phone2" label="Personal Mobile Number" rules={[{ required: true, message: 'Please enter personal mobile number' }]}>
-                            <Input addonBefore="+91" placeholder="Alternate Number" disabled={readOnly} />
+                        <Form.Item
+                            name="phone2"
+                            label="Personal Mobile Number"
+                            rules={[
+                                { required: true, message: 'Please enter personal mobile number' },
+                                { pattern: /^\d{10}$/, message: 'Phone number must be exactly 10 digits' }
+                            ]}
+                            normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                        >
+                            <Input addonBefore="+91" placeholder="Alternate Number" maxLength={10} disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item name="phone" label="Mobile Number" rules={[{ required: true, message: 'Please enter mobile number' }]}>
-                            <Input addonBefore="+91" placeholder="Mobile Number" disabled={readOnly} />
+                        <Form.Item
+                            name="phone"
+                            label="Mobile Number"
+                            rules={[
+                                { required: true, message: 'Please enter mobile number' },
+                                { pattern: /^\d{10}$/, message: 'Phone number must be exactly 10 digits' }
+                            ]}
+                            normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                        >
+                            <Input addonBefore="+91" placeholder="Mobile Number" maxLength={10} disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={8}>
@@ -161,18 +205,36 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
                 </Row>
                 <Row gutter={24}>
                     <Col span={8}>
-                        <Form.Item name="aadhaarNumber" label="Aadhaar Number">
-                            <Input placeholder="Aadhaar Number" disabled={readOnly} />
+                        <Form.Item
+                            name="aadhaarNumber"
+                            label="Aadhaar Number"
+                            rules={[
+                                { pattern: /^\d{12}$/, message: 'Aadhaar must be exactly 12 digits' }
+                            ]}
+                            normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                        >
+                            <Input placeholder="Aadhaar Number" maxLength={12} disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item name="panNumber" label="PAN Number">
-                            <Input placeholder="PAN Number" disabled={readOnly} />
+                        <Form.Item
+                            name="panNumber"
+                            label="PAN Number"
+                            rules={[
+                                { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, message: 'Invalid PAN format' }
+                            ]}
+                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                        >
+                            <Input placeholder="PAN Number" maxLength={10} disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={8}>
-                        <Form.Item name="drivingLicense" label="Driving License">
-                            <Input placeholder="DRIVING LICENSE" disabled={readOnly} />
+                        <Form.Item
+                            name="drivingLicense"
+                            label="Driving License"
+                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                        >
+                            <Input placeholder="Driving License" maxLength={16} disabled={readOnly} />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -196,17 +258,38 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ open, onClose, onSave, in
                 <Title level={5} className={styles.sectionTitle}>Account Details</Title>
                 <Row gutter={24}>
                     <Col span={6}>
-                        <Form.Item name="ifscCode" label="IFSC Code">
-                            <Input placeholder="IFSC CODE" disabled={readOnly} />
+                        <Form.Item
+                            name="ifscCode"
+                            label="IFSC Code"
+                            rules={[
+                                { pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, message: 'Invalid IFSC format' }
+                            ]}
+                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                        >
+                            <Input placeholder="IFSC CODE" maxLength={11} disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="accountNumber" label="Account Number">
-                            <Input placeholder="Account Number" disabled={readOnly} />
+                        <Form.Item
+                            name="accountNumber"
+                            label="Account Number"
+                            normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                        >
+                            <Input placeholder="Account Number" maxLength={18} disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="accountHolder" label="Account Holder">
+                        <Form.Item
+                            name="accountHolder"
+                            label="Account Holder"
+                            rules={[
+                                { pattern: /^[a-zA-Z\s]+$/, message: 'Only alphabets are allowed' }
+                            ]}
+                            normalize={(value) => {
+                                const val = (value || '').replace(/[^a-zA-Z\s]/g, '');
+                                return val.replace(/\b\w+/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+                            }}
+                        >
                             <Input placeholder="Account Holder" disabled={readOnly} />
                         </Form.Item>
                     </Col>

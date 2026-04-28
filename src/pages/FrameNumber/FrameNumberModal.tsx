@@ -95,8 +95,13 @@ const FrameNumberModal: React.FC<FrameNumberModalProps> = ({ open, onClose, onSa
 
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Form.Item name="inputValue" label={<span className={styles.formLabel}>Input Value</span>} rules={[{ required: true, message: 'Please enter input value' }, { len: 1, message: 'Max 1 character' }]}>
-                            <Input placeholder="e.g. A" maxLength={1} onChange={e => form.setFieldsValue({ inputValue: e.target.value.toUpperCase() })} />
+                        <Form.Item
+                            name="inputValue"
+                            label={<span className={styles.formLabel}>Input Value</span>}
+                            rules={[{ required: true, message: 'Please enter input value' }, { len: 1, message: 'Max 1 character' }]}
+                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                        >
+                            <Input placeholder="e.g. A" maxLength={1} />
                         </Form.Item>
                     </Col>
                     <Col span={12}>
