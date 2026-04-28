@@ -82,7 +82,7 @@ const Login: React.FC = () => {
                         name="phone"
                         rules={[
                             { required: true, message: 'Please input your phone number!' },
-                            { pattern: /^[6-9]\d{9}$/, message: 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9' }
+                            { pattern: /^[6-9]\d{9}$/, message: 'Please enter a valid phone number' }
                         ]}
                         normalize={(value) => {
                             const cleaned = (value || '').replace(/\D/g, '');

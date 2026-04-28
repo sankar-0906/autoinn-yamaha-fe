@@ -457,7 +457,7 @@ const VehicleMasterModal: React.FC<VehicleMasterModalProps> = ({ open, onClose, 
                         <Form.Item name="vehicleStatus" label="Vehicle Status" rules={[{ required: true, message: 'Required' }]}>
                             <Select placeholder="Select Status" disabled={readOnly}>
                                 <Option value="Available">Available</Option>
-                                <Option value="Unavailable">Unavailable</Option>
+                                <Option value="Not Available">Not Available</Option>
                             </Select>
                         </Form.Item>
                         <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>

@@ -269,7 +269,7 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                                     }
                                                     const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
                                                     if (!gstPattern.test(cleanValue)) {
-                                                        return Promise.reject(new Error('Invalid GST format (e.g., 22AAAAA0000A1ZV)'));
+                                                        return Promise.reject(new Error('Enter valid GST number'));
                                                     }
                                                     return Promise.resolve();
                                                 }
@@ -487,7 +487,7 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                 label="Pincode"
                                 rules={[
                                     { required: true, message: 'Please enter pincode' },
-                                    { pattern: /^[1-9][0-9]{5}$/, message: 'Invalid Indian Pincode (must be 6 digits, first digit cannot be 0)' }
+                                    { pattern: /^[1-9][0-9]{5}$/, message: 'Enter valid pincode' }
                                 ]}
                                 normalize={(value) => {
                                     const cleaned = (value || '').replace(/[^0-9]/g, '');

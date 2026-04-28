@@ -140,7 +140,7 @@ const CompanySettings: React.FC = () => {
                                                     name="email"
                                                     label="Email"
                                                     rules={[
-                                                        { required: true, message: 'Email is required' },
+                                                        { required: true, message: 'Enter email' },
                                                         { type: 'email', message: 'Invalid email format' }
                                                     ]}
                                                 >
@@ -157,8 +157,8 @@ const CompanySettings: React.FC = () => {
                                                     name="phone"
                                                     label="Phone"
                                                     rules={[
-                                                        { required: true, message: 'Phone is required' },
-                                                        { pattern: /^\d{10}$/, message: 'Phone number must be exactly 10 digits' }
+                                                        { required: true, message: 'Enter phone number' },
+                                                        { pattern: /^\d{10}$/, message: 'Enter valid phone number' }
                                                     ]}
                                                     normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
                                                 >
@@ -170,8 +170,8 @@ const CompanySettings: React.FC = () => {
                                                     name="cin"
                                                     label="CIN"
                                                     rules={[
-                                                        { required: true, message: 'CIN is required' },
-                                                        { pattern: /^[A-Z0-9]{21}$/, message: 'CIN must be exactly 21 alphanumeric characters' }
+                                                        { required: true, message: 'Enter CIN number' },
+                                                        { pattern: /^[A-Z0-9]{21}$/, message: 'Enter valid CIN number' }
                                                     ]}
                                                     normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
                                                 >
@@ -183,8 +183,8 @@ const CompanySettings: React.FC = () => {
                                                     name="pan"
                                                     label="PAN"
                                                     rules={[
-                                                        { required: true, message: 'PAN is required' },
-                                                        { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, message: 'Invalid PAN format' }
+                                                        { required: true, message: 'Enter PAN number' },
+                                                        { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, message: 'Enter valid PAN number' }
                                                     ]}
                                                     normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
                                                 >
@@ -196,8 +196,8 @@ const CompanySettings: React.FC = () => {
                                                     name="contactPerson"
                                                     label="Contact Person"
                                                     rules={[
-                                                        { required: true, message: 'Contact Person is required' },
-                                                        { pattern: /^[a-zA-Z\s]+$/, message: 'Only alphabets are allowed' }
+                                                        { required: true, message: 'Enter contact person' },
+                                                        { pattern: /^[a-zA-Z\s]+$/, message: 'Enter valid name' }
                                                     ]}
                                                     normalize={(value) => {
                                                         const val = (value || '').replace(/[^a-zA-Z\s]/g, '');

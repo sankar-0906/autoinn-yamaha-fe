@@ -121,49 +121,49 @@ const BranchForm = ({ open, close, data, editable, emitData }) => {
             };
 
             if (!finalData.name) {
-                message.error("Branch name is required");
+                message.error("Enter branch name");
                 setLoading(false);
                 return;
             }
 
             if (!finalData.address?.line1) {
-                message.error("Address line 1 is required");
+                message.error("Enter address line 1");
                 setLoading(false);
                 return;
             }
 
             if (!finalData.address?.locality) {
-                message.error("Locality is required");
+                message.error("Enter locality");
                 setLoading(false);
                 return;
             }
 
             if (!finalData.address?.country) {
-                message.error("Country is required");
+                message.error("Select country");
                 setLoading(false);
                 return;
             }
 
             if (!finalData.address?.state) {
-                message.error("State is required");
+                message.error("Select state");
                 setLoading(false);
                 return;
             }
 
             if (!finalData.address?.district) {
-                message.error("City is required");
+                message.error("Select city");
                 setLoading(false);
                 return;
             }
 
             if (!finalData.address?.pincode) {
-                message.error("Pincode is required");
+                message.error("Enter pincode");
                 setLoading(false);
                 return;
             }
 
             if (!finalData.contacts || finalData.contacts.length === 0) {
-                message.error("At least one contact is required");
+                message.error("Add at least one contact");
                 setLoading(false);
                 return;
             }

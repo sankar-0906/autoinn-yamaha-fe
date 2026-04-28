@@ -646,7 +646,7 @@ const InwardImportPage: React.FC = () => {
                     <Form form={form} layout="vertical" disabled={isViewOnly}>
                         <Row gutter={16}>
                             <Col span={8}>
-                                <Form.Item name="dealerName" label="Dealer Name" rules={[{ required: true, message: 'Please select a dealer' }]}>
+                                <Form.Item name="dealerName" label="Dealer Name" rules={[{ required: true, message: 'Select dealer' }]}>
                                     <Select
                                         showSearch
                                         placeholder="Select Dealer"

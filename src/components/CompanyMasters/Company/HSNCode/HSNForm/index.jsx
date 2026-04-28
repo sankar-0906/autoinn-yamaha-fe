@@ -129,6 +129,13 @@ const HSNForm = (props) => {
                                 }}
                                 disabled={!editable}
                                 placeholder="IGST"
+                                min={0}
+                                onKeyPress={(e) => {
+                                    const char = String.fromCharCode(e.which);
+                                    if (!/[0-9]/.test(char) && char !== '.') {
+                                        e.preventDefault();
+                                    }
+                                }}
                             />
                         </Form.Item>
                     </Col>
@@ -179,6 +186,13 @@ const HSNForm = (props) => {
                                 addonAfter="%"
                                 disabled={!editable}
                                 placeholder="Cess"
+                                min={0}
+                                onKeyPress={(e) => {
+                                    const char = String.fromCharCode(e.which);
+                                    if (!/[0-9]/.test(char) && char !== '.') {
+                                        e.preventDefault();
+                                    }
+                                }}
                             />
                         </Form.Item>
                     </Col>

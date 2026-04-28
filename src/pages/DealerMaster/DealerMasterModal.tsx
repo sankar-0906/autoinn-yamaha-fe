@@ -290,7 +290,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                             }
                                             const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
                                             if (!gstPattern.test(cleanValue)) {
-                                                return Promise.reject(new Error('Invalid GST format (e.g., 22AAAAA0000A1ZV)'));
+                                                return Promise.reject(new Error('Enter valid GST number'));
                                             }
                                         }
                                         return Promise.resolve();
@@ -345,7 +345,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
 
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Form.Item name={['address', 'line1']} label={<span className={styles.formLabel}>Address Line 1</span>} rules={[{ required: true }]}>
+                        <Form.Item name={['address', 'line1']} label={<span className={styles.formLabel}>Address Line 1</span>} rules={[{ required: true, message: 'Please enter Address Line 1' }]}>
                             <Input placeholder="Address Line 1" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -367,7 +367,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                             name={['address', 'locality']}
                             label={<span className={styles.formLabel}>Locality</span>}
                             rules={[
-                                { required: true, message: 'Required' },
+                                { required: true, message: 'This field is required' },
                                 { pattern: /^[a-zA-Z0-9\s,.-]+$/, message: 'Invalid characters in Locality' }
                             ]}
                             normalize={(value) => (value || '').replace(/[^a-zA-Z0-9\s,.-]/g, '')}
@@ -430,7 +430,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                             name={['address', 'pincode']}
                             label={<span className={styles.formLabel}>Pincode</span>}
                             rules={[
-                                { required: true, message: 'Required' },
+                                { required: true, message: 'This field is required' },
                                 { pattern: /^[1-9][0-9]{5}$/, message: 'Invalid Pincode' }
                             ]}
                             normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
@@ -454,7 +454,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                     )}
                                     <Row gutter={24}>
                                         <Col span={12}>
-                                            <Form.Item {...restField} name={[name, 'line1']} label={<span className={styles.formLabel}>Address Line 1</span>} rules={[{ required: true }]}>
+                                            <Form.Item {...restField} name={[name, 'line1']} label={<span className={styles.formLabel}>Address Line 1</span>} rules={[{ required: true, message: 'Please enter Address Line 1' }]}>
                                                 <Input placeholder="Address Line 1" disabled={readOnly} />
                                             </Form.Item>
                                         </Col>
@@ -471,7 +471,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                                 name={[name, 'locality']}
                                                 label={<span className={styles.formLabel}>Locality</span>}
                                                 rules={[
-                                                    { required: true, message: 'Required' },
+                                                    { required: true, message: 'This field is required' },
                                                     { pattern: /^[a-zA-Z0-9\s,.-]+$/, message: 'Invalid characters in Locality' }
                                                 ]}
                                                 normalize={(value) => (value || '').replace(/[^a-zA-Z0-9\s,.-]/g, '')}
@@ -485,7 +485,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                                 name={[name, 'pincode']}
                                                 label={<span className={styles.formLabel}>Pincode</span>}
                                                 rules={[
-                                                    { required: true, message: 'Required' },
+                                                    { required: true, message: 'This field is required' },
                                                     { pattern: /^[1-9][0-9]{5}$/, message: 'Invalid Pincode' }
                                                 ]}
                                                 normalize={(value) => (value || '').replace(/[^0-9]/g, '')}

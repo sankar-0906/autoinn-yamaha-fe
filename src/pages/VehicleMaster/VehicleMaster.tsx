@@ -135,17 +135,23 @@ const VehicleMasterPage: React.FC = () => {
             title: 'Category',
             dataIndex: 'category',
             key: 'category',
-            render: (text: string) => text ? <Tag color="blue">{text}</Tag> : '-'
+            render: (text: string) => text ? <Tag color="blue">{text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()}</Tag> : '-'
         },
         {
             title: 'Status',
             dataIndex: 'vehicleStatus',
             key: 'status',
-            render: (text: string) => (
-                <Tag color={text === 'Available' ? 'green' : 'orange'}>
-                    {text || 'Unknown'}
-                </Tag>
-            )
+            render: (text: string) => {
+                const normalizedStatus = text?.toLowerCase();
+                const isAvailable = normalizedStatus === 'available';
+                const displayStatus = isAvailable ? 'Available' : 'Not Available';
+                
+                return (
+                    <Tag color={isAvailable ? 'green' : 'orange'}>
+                        {displayStatus}
+                    </Tag>
+                );
+            }
         },
         {
             title: 'Action',

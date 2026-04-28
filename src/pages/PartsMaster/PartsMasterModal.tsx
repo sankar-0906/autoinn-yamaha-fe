@@ -215,12 +215,20 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="size" label={<span className={styles.formLabel}>Size</span>}>
+                        <Form.Item 
+                            name="size" 
+                            label={<span className={styles.formLabel}>Size</span>}
+                            normalize={(value) => (value || '').toUpperCase()}
+                        >
                             <Input placeholder="Enter Size" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
-                        <Form.Item name="mainPartNumber" label={<span className={styles.formLabel}>Main Part No.</span>}>
+                        <Form.Item 
+                            name="mainPartNumber" 
+                            label={<span className={styles.formLabel}>Main Part No.</span>}
+                            normalize={(value) => (value || '').toUpperCase()}
+                        >
                             <Input placeholder="Enter Main Part Number" disabled={readOnly} />
                         </Form.Item>
                     </Col>
@@ -251,6 +259,14 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                                 placeholder="Minimum Order Quantity"
                                 style={{ width: '100%' }}
                                 disabled={readOnly}
+                                min={0}
+                                controls={true}
+                                onKeyPress={(e) => {
+                                    const char = String.fromCharCode(e.which);
+                                    if (!/[0-9]/.test(char) && char !== '.') {
+                                        e.preventDefault();
+                                    }
+                                }}
                             />
                         </Form.Item>
                     </Col>
@@ -365,6 +381,14 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                                 style={{ width: '100%' }}
                                 disabled={readOnly}
                                 addonBefore="₹"
+                                min={0}
+                                controls={true}
+                                onKeyPress={(e) => {
+                                    const char = String.fromCharCode(e.which);
+                                    if (!/[0-9]/.test(char) && char !== '.') {
+                                        e.preventDefault();
+                                    }
+                                }}
                             />
                         </Form.Item>
                     </Col>
@@ -396,6 +420,14 @@ const PartsMasterModal: React.FC<PartsMasterModalProps> = ({ open, onClose, onSa
                                 style={{ width: '100%' }}
                                 disabled={readOnly}
                                 addonBefore="₹"
+                                min={0}
+                                controls={true}
+                                onKeyPress={(e) => {
+                                    const char = String.fromCharCode(e.which);
+                                    if (!/[0-9]/.test(char) && char !== '.') {
+                                        e.preventDefault();
+                                    }
+                                }}
                             />
                         </Form.Item>
                     </Col>
