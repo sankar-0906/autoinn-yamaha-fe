@@ -34,17 +34,18 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response) {
       const { status, data } = error.response;
+      const isLoginEndpoint = error.config?.url?.includes('/login');
 
-      // Unauthorized → log out
-      if (status === 401) {
+      // Unauthorized → log out (but not for login endpoint)
+      if (status === 401 && !isLoginEndpoint) {
         message.error('Session expired. Please log in again.');
         removeToken();
         localStorage.removeItem('user');
         window.location.href = '/yamaha/login';
       }
 
-      // Common 4xx/5xx handling
-      if (status >= 400) {
+      // Common 4xx/5xx handling (but not for login endpoint)
+      if (status >= 400 && !isLoginEndpoint) {
         message.error(data?.message || 'Something went wrong');
       }
     } else if (error.request) {

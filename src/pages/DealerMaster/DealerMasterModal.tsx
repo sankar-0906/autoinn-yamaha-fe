@@ -158,10 +158,17 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
     };
 
     const handleGstChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
         form.setFieldsValue({ GSTIN: val });
 
         if (val.length === 15) {
+            const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+            if (!gstPattern.test(val)) {
+                setGstName('');
+                setGstStatus('');
+                return;
+            }
+
             try {
                 const res = await verifyGST(val);
                 const { data } = res;
@@ -196,7 +203,21 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
             return;
         }
         form.validateFields().then(values => {
+            const gstValue = values.GSTIN;
+            const dealerType = values.dealerType;
+            
+            if ((dealerType === 'Registered Dealer' || dealerType === 'Composition Dealer') && gstValue) {
+                const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                if (!gstPattern.test(gstValue)) {
+                    message.error('Invalid GST Number format');
+                    return;
+                }
+            }
+            
             onSave(values);
+        }).catch(error => {
+            console.error('Validation failed:', error);
+            message.error('Please fix validation errors before submitting');
         });
     };
 
@@ -262,13 +283,24 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                         if ((dt === 'Registered Dealer' || dt === 'Composition Dealer') && !value) {
                                             return Promise.reject(new Error('GSTIN is required for this Dealer Type'));
                                         }
-                                        if (value && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(value)) {
-                                            return Promise.reject(new Error('Invalid GST format'));
+                                        if (value) {
+                                            const cleanValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                            if (cleanValue.length !== 15) {
+                                                return Promise.reject(new Error('GST Number must be exactly 15 characters'));
+                                            }
+                                            const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                                            if (!gstPattern.test(cleanValue)) {
+                                                return Promise.reject(new Error('Invalid GST format (e.g., 22AAAAA0000A1ZV)'));
+                                            }
                                         }
                                         return Promise.resolve();
                                     }
                                 })
                             ]}
+                            normalize={(value) => {
+                                const cleanValue = (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                return cleanValue.slice(0, 15);
+                            }}
                         >
                             <Input
                                 placeholder="Enter GSTIN"
@@ -276,6 +308,12 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                 maxLength={15}
                                 onChange={handleGstChange}
                                 style={{ textTransform: 'uppercase' }}
+                                onKeyPress={(e) => {
+                                    const char = String.fromCharCode(e.which);
+                                    if (!/[A-Za-z0-9]/.test(char)) {
+                                        e.preventDefault();
+                                    }
+                                }}
                             />
                         </Form.Item>
                         {gstName && (

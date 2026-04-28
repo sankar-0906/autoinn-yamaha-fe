@@ -19,10 +19,13 @@ const Login: React.FC = () => {
     const onFinish = async (values: any) => {
         setLoading(true);
         try {
+            console.log('Attempting login with:', values.phone);
             const response = await axiosInstance.post('/auth/login', {
                 phone: values.phone,
                 password: values.password,
             });
+
+            console.log('Login response:', response.data);
 
             if (response.data.data) {
                 const { token, user } = response.data.data;
@@ -30,11 +33,31 @@ const Login: React.FC = () => {
                 message.success('Login successful');
                 navigate('/dashboard');
             } else {
-                message.error(response.data.message || 'Login failed');
+                console.log('Login failed - no data in response');
+                message.error(response.data.message || 'Invalid Phone No or Password');
             }
         } catch (error: any) {
             console.error('Login error:', error);
-            message.error(error.response?.data?.message || 'Connection error');
+            console.error('Error response:', error.response);
+            let errorMessage = 'Invalid Phone No or Password';
+            
+            if (error.response) {
+                console.log('Error status:', error.response.status);
+                if (error.response.status === 401) {
+                    errorMessage = 'Invalid Phone No or Password';
+                } else if (error.response.status === 400) {
+                    errorMessage = error.response.data?.message || 'Invalid request';
+                } else if (error.response.status === 500) {
+                    errorMessage = 'Server error. Please try again later';
+                } else {
+                    errorMessage = error.response.data?.message || 'Invalid Phone No or Password';
+                }
+            } else if (error.request) {
+                errorMessage = 'Network error. Please check your connection';
+            }
+            
+            console.log('Showing error message:', errorMessage);
+            message.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -57,9 +80,26 @@ const Login: React.FC = () => {
                 >
                     <Form.Item
                         name="phone"
-                        rules={[{ required: true, message: 'Please input your phone number!' }]}
+                        rules={[
+                            { required: true, message: 'Please input your phone number!' },
+                            { pattern: /^[6-9]\d{9}$/, message: 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9' }
+                        ]}
+                        normalize={(value) => {
+                            const cleaned = (value || '').replace(/\D/g, '');
+                            return cleaned.slice(0, 10);
+                        }}
                     >
-                        <Input prefix={<PhoneOutlined />} placeholder="Phone Number" />
+                        <Input 
+                            prefix={<PhoneOutlined />} 
+                            placeholder="Phone Number" 
+                            maxLength={10}
+                            onKeyPress={(e) => {
+                                const char = String.fromCharCode(e.which);
+                                if (!/[0-9]/.test(char)) {
+                                    e.preventDefault();
+                                }
+                            }}
+                        />
                     </Form.Item>
                     <Form.Item
                         name="password"

@@ -91,10 +91,17 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
     };
 
     const handleGstChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
         form.setFieldsValue({ gst: val });
 
         if (val.length === 15) {
+            const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+            if (!gstPattern.test(val)) {
+                setGstName('');
+                setGstStatus('');
+                return;
+            }
+
             try {
                 const res = await verifyGST(val);
                 const { data } = res;
@@ -166,7 +173,18 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
             return;
         }
         form.validateFields().then(values => {
+            const gstValue = values.gst;
+            if (gstValue && gstValue.length === 15) {
+                const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                if (!gstPattern.test(gstValue)) {
+                    message.error('Invalid GST Number format');
+                    return;
+                }
+            }
             onSave({ ...values, logo });
+        }).catch(error => {
+            console.error('Validation failed:', error);
+            message.error('Please fix validation errors before submitting');
         });
     };
 
@@ -227,6 +245,10 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                     <Form.Item
                                         name="code"
                                         label="Manufacturer Code"
+                                        rules={[
+                                            { pattern: /^[A-Za-z0-9\s]+$/, message: 'Manufacturer Code can only contain letters, numbers, and spaces' }
+                                        ]}
+                                        normalize={(value) => (value || '').replace(/[^A-Za-z0-9\s]/g, '')}
                                         className={styles.compactFormItem}
                                     >
                                         <Input placeholder="Enter manufacturer code" disabled={readOnly} />
@@ -238,9 +260,25 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                         label="GST Number"
                                         rules={[
                                             { required: true, message: 'Please enter GST number' },
-                                            { pattern: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, message: 'Invalid GST format' }
+                                            { 
+                                                validator: (_, value) => {
+                                                    if (!value) return Promise.resolve();
+                                                    const cleanValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                                    if (cleanValue.length !== 15) {
+                                                        return Promise.reject(new Error('GST Number must be exactly 15 characters'));
+                                                    }
+                                                    const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                                                    if (!gstPattern.test(cleanValue)) {
+                                                        return Promise.reject(new Error('Invalid GST format (e.g., 22AAAAA0000A1ZV)'));
+                                                    }
+                                                    return Promise.resolve();
+                                                }
+                                            }
                                         ]}
-                                        normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                                        normalize={(value) => {
+                                            const cleanValue = (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                            return cleanValue.slice(0, 15);
+                                        }}
                                         className={styles.compactFormItem}
                                     >
                                         <Input
@@ -249,6 +287,12 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                             maxLength={15}
                                             onChange={handleGstChange}
                                             style={{ textTransform: 'uppercase' }}
+                                            onKeyPress={(e) => {
+                                                const char = String.fromCharCode(e.which);
+                                                if (!/[A-Za-z0-9]/.test(char)) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
                                         />
                                     </Form.Item>
                                     {gstName && (
@@ -343,7 +387,15 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                         </Col>
 
                         <Col span={12}>
-                            <Form.Item name="locality" label="Locality" className={styles.compactFormItem}>
+                            <Form.Item 
+                                name="locality" 
+                                label="Locality" 
+                                rules={[
+                                    { pattern: /^[A-Za-z0-9\s\-.,]+$/, message: 'Locality can only contain letters, numbers, spaces, hyphens, dots, and commas' }
+                                ]}
+                                normalize={(value) => (value || '').replace(/[^A-Za-z0-9\s\-.,]/g, '')}
+                                className={styles.compactFormItem}
+                            >
                                 <Input placeholder="Enter locality or area" disabled={readOnly} />
                             </Form.Item>
                         </Col>
@@ -435,12 +487,25 @@ const ManufacturerModal: React.FC<ManufacturerModalProps> = ({ open, onClose, on
                                 label="Pincode"
                                 rules={[
                                     { required: true, message: 'Please enter pincode' },
-                                    { pattern: /^[1-9][0-9]{5}$/, message: 'Invalid Indian Pincode' }
+                                    { pattern: /^[1-9][0-9]{5}$/, message: 'Invalid Indian Pincode (must be 6 digits, first digit cannot be 0)' }
                                 ]}
-                                normalize={(value) => (value || '').replace(/[^0-9]/g, '')}
+                                normalize={(value) => {
+                                    const cleaned = (value || '').replace(/[^0-9]/g, '');
+                                    return cleaned.slice(0, 6);
+                                }}
                                 className={styles.compactFormItem}
                             >
-                                <Input placeholder="Enter pincode" maxLength={6} disabled={readOnly} />
+                                <Input 
+                                    placeholder="Enter pincode" 
+                                    maxLength={6} 
+                                    disabled={readOnly}
+                                    onKeyPress={(e) => {
+                                        const char = String.fromCharCode(e.which);
+                                        if (!/[0-9]/.test(char)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                />
                             </Form.Item>
                         </Col>
                     </Row>
