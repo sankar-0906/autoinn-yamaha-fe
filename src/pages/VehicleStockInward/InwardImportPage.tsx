@@ -4,7 +4,7 @@ import {
 } from 'antd';
 import { InboxOutlined, SaveOutlined, EditOutlined, ArrowLeftOutlined, PlusOutlined, DeleteOutlined, FilePdfOutlined } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { processInwardPdf, createVehicleStockInward, updateVehicleStockInward, getVehicleStockInwardById, lookupVehicleImage } from '../../api/vehicleStockInward';
+import { processInwardPdf, createVehicleStockInward, updateVehicleStockInward, getVehicleStockInwardById, lookupVehicleImage, getInwardPdfJobStatus } from '../../api/vehicleStockInward';
 import { getUniqueModels, getColorsByModel } from '../../api/vehicleMaster';
 import { getDealers } from '../../api/dealer';
 import dayjs from 'dayjs';
@@ -26,6 +26,7 @@ const InwardImportPage: React.FC = () => {
     const [rowColors, setRowColors] = useState<Record<number, any[]>>({});
     const [dealers, setDealers] = useState<any[]>([]);
     const [entryMode, setEntryMode] = useState<'choice' | 'pdf' | 'manual' | 'data'>(id ? 'data' : 'choice');
+    const [, setJobId] = useState<string | null>(null);
 
     // Determine mode based on URL
     const isEditMode = location.pathname.includes('/edit/');
@@ -190,78 +191,118 @@ const InwardImportPage: React.FC = () => {
         fetchMissingImages();
     }, [extractedData?.VEHICLES]);
 
-    const handleFileUpload = async (file: File) => {
-        setLoading(true);
-        setProcessingStep('Initializing document processing...');
-        try {
-            setProcessingStep('Extracting data via OCR...');
-            const res = await processInwardPdf(file);
+    const pollJob = async (jobId: string) => {
+        const interval = setInterval(async () => {
+            try {
+                const res = await getInwardPdfJobStatus(jobId);
+                const job = res.data;
 
-            if (res.data.success) {
-                const data = res.data.data;
-
-                // Autofill and parse model codes
-                if (data["VEHICLES"]) {
-                    data["VEHICLES"] = await Promise.all(data["VEHICLES"].map(async (v: any) => {
-                        let modelCode = v.modelCode || '';
-                        let colorCode = v.colorCode || '';
-                        let imageUrl = v.imageUrl || '';
-
-                        // Parse combined format MODEL-COLOR
-                        if (modelCode.includes('-')) {
-                            const parts = modelCode.split('-');
-                            modelCode = parts[0];
-                            if (!colorCode) colorCode = parts[1] || '';
-                        }
-
-                        // Try to trigger initial image lookup for the fetched data
-                        if (modelCode && colorCode) {
-                            try {
-                                const imgRes = await lookupVehicleImage(modelCode, colorCode);
-                                imageUrl = imgRes.data?.data || '';
-                            } catch (e) {
-                                console.error('Initial image lookup failed', e);
-                            }
-                        }
-
-                        return { ...v, modelCode, colorCode, imageUrl };
-                    }));
+                if (job.status === 'done') {
+                    clearInterval(interval);
+                    setJobId(null);
+                    await handlePdfProcessingComplete(job.data);
+                } else if (job.status === 'error') {
+                    clearInterval(interval);
+                    setJobId(null);
+                    setLoading(false);
+                    setProcessingStep('');
+                    message.error(job.message || 'PDF processing failed');
                 }
-
-                setExtractedData(data);
-
-                const parseDate = (d: string) => {
-                    if (!d) return null;
-                    let parsed = dayjs(d, 'DD-MM-YYYY');
-                    if (parsed.isValid()) return parsed;
-                    parsed = dayjs(d, 'DD-MMM-YYYY');
-                    return parsed.isValid() ? parsed : dayjs(d);
-                };
-
-                form.setFieldsValue({
-                    // dealerName: data["NAME"], // User requested NOT to auto-fill dealer name
-                    address: data["ADDRESS"],
-                    deliveryAddress: data["ADDRESS OF DELIVERY"],
-                    invoiceNo: data["INVOICE NO"]?.toUpperCase(),
-                    date: parseDate(data["DATE"]),
-                    placeOfSupply: data["PLACE OF SUPPLY"],
-                    daNumber: data["DA NUMBER"],
-                    daDate: parseDate(data["DA DATE"]),
-                    modeOfTransport: data["MODE OF DISPATCH"],
-                    transporter: data["TRANSPORTER"],
-                    policyNumber: data["POLICY NO"],
-                    vehicleNo: data["VEHICLE NO"],
-                    from: data["FROM"],
-                    to: data["TO"],
-                    insuranceCo: data["INSURANCE CO"]
-                });
-                message.success('Data extraction successful! Please select the Dealer.');
+                // Continue polling if still 'processing'
+            } catch (err) {
+                clearInterval(interval);
+                setJobId(null);
+                setLoading(false);
+                setProcessingStep('');
+                message.error('Failed to check processing status');
             }
+        }, 3000); // Poll every 3 seconds
+    };
+
+    const handlePdfProcessingComplete = async (data: any) => {
+        try {
+            // Autofill and parse model codes
+            if (data["VEHICLES"]) {
+                data["VEHICLES"] = await Promise.all(data["VEHICLES"].map(async (v: any) => {
+                    let modelCode = v.modelCode || '';
+                    let colorCode = v.colorCode || '';
+                    let imageUrl = v.imageUrl || '';
+
+                    // Parse combined format MODEL-COLOR
+                    if (modelCode.includes('-')) {
+                        const parts = modelCode.split('-');
+                        modelCode = parts[0];
+                        if (!colorCode) colorCode = parts[1] || '';
+                    }
+
+                    // Try to trigger initial image lookup for the fetched data
+                    if (modelCode && colorCode) {
+                        try {
+                            const imgRes = await lookupVehicleImage(modelCode, colorCode);
+                            imageUrl = imgRes.data?.data || '';
+                        } catch (e) {
+                            console.error('Initial image lookup failed', e);
+                        }
+                    }
+
+                    return { ...v, modelCode, colorCode, imageUrl };
+                }));
+            }
+
+            setExtractedData(data);
+
+            const parseDate = (d: string) => {
+                if (!d) return null;
+                let parsed = dayjs(d, 'DD-MM-YYYY');
+                if (parsed.isValid()) return parsed;
+                parsed = dayjs(d, 'DD-MMM-YYYY');
+                return parsed.isValid() ? parsed : dayjs(d);
+            };
+
+            form.setFieldsValue({
+                // dealerName: data["NAME"], // User requested NOT to auto-fill dealer name
+                address: data["ADDRESS"],
+                deliveryAddress: data["ADDRESS OF DELIVERY"],
+                invoiceNo: data["INVOICE NO"]?.toUpperCase(),
+                date: parseDate(data["DATE"]),
+                placeOfSupply: data["PLACE OF SUPPLY"],
+                daNumber: data["DA NUMBER"],
+                daDate: parseDate(data["DA DATE"]),
+                modeOfTransport: data["MODE OF DISPATCH"],
+                transporter: data["TRANSPORTER"],
+                policyNumber: data["POLICY NO"],
+                vehicleNo: data["VEHICLE NO"],
+                from: data["FROM"],
+                to: data["TO"],
+                insuranceCo: data["INSURANCE CO"]
+            });
+            message.success('Data extraction successful! Please select the Dealer.');
         } catch (err: any) {
-            message.error(err.response?.data?.message || 'Data extraction failed.');
+            message.error('Data processing failed');
         } finally {
             setLoading(false);
             setProcessingStep('');
+        }
+    };
+
+    const handleFileUpload = async (file: File) => {
+        setLoading(true);
+        setProcessingStep('Uploading PDF for processing...');
+        try {
+            const res = await processInwardPdf(file);
+
+            if (res.data.success && res.data.jobId) {
+                setJobId(res.data.jobId);
+                setProcessingStep('Processing PDF with OCR... This may take 15-25 seconds.');
+                // Start polling
+                pollJob(res.data.jobId);
+            } else {
+                throw new Error('No job ID returned from server');
+            }
+        } catch (err: any) {
+            setLoading(false);
+            setProcessingStep('');
+            message.error(err.response?.data?.message || 'Failed to start PDF processing');
         }
         return false;
     };
@@ -406,7 +447,7 @@ const InwardImportPage: React.FC = () => {
             dataIndex: 'modelCode',
             key: 'modelCode',
             width: 200,
-            render: (text: string, record: any, rowIndex: number) => (
+            render: (text: string, _record: any, rowIndex: number) => (
                 <Select
                     showSearch
                     className={styles.uppercaseSearch}
