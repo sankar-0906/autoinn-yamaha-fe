@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Row, Col, Typography, Button, Image, Empty, Space, Tag, Popover } from 'antd';
+import { Table, Row, Col, Typography, Button, Image, Empty, Space, Tag, Popover, Select } from 'antd';
 import { LeftOutlined, CalendarOutlined, CarOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './VehicleInventory.module.css';
@@ -16,7 +16,6 @@ const VehicleInventoryDetail: React.FC = () => {
     const [searchParams] = useSearchParams();
     const modelId = searchParams.get('modelId');
     const colorCode = searchParams.get('colorCode');
-    const [dealerId] = useState(searchParams.get('dealerId') || 'all');
 
     const [loading, setLoading] = useState(false);
     const [units, setUnits] = useState<any[]>([]);
@@ -25,6 +24,7 @@ const VehicleInventoryDetail: React.FC = () => {
     const [dealerModalOpen, setDealerModalOpen] = useState(false);
     const [selectedDealerForModal, setSelectedDealerForModal] = useState<any>(null);
     const [savingDealer, setSavingDealer] = useState(false);
+    const [dealerFilter, setDealerFilter] = useState<string>(searchParams.get('dealerId') || 'all');
 
     useEffect(() => {
         fetchDealers();
@@ -34,7 +34,7 @@ const VehicleInventoryDetail: React.FC = () => {
         if (modelId) {
             fetchUnits();
         }
-    }, [modelId, colorCode, dealerId]);
+    }, [modelId, colorCode]);
 
     const fetchDealers = async () => {
         try {
@@ -48,7 +48,7 @@ const VehicleInventoryDetail: React.FC = () => {
     const fetchUnits = async () => {
         setLoading(true);
         try {
-            const res = await getInventoryDetails({ modelId, colorCode, dealerId });
+            const res = await getInventoryDetails({ modelId, colorCode, dealerId: 'all' });
             const data = res.data?.data || [];
             setUnits(data);
             if (data.length > 0) {
@@ -109,6 +109,11 @@ const VehicleInventoryDetail: React.FC = () => {
             dataIndex: 'engineNo',
             key: 'engineNo',
             className: styles.vehicleId
+        },
+        {
+            title: 'Dealer Name',
+            key: 'dealerName',
+            render: (_: any, record: any) => <Text style={{ color: '#64748b' }}>{record.lineItem?.inward?.dealer?.name || 'N/A'}</Text>
         },
         {
             title: 'Status',
@@ -189,15 +194,23 @@ const VehicleInventoryDetail: React.FC = () => {
                             <div className={styles.detailField}>
                                 <div className={styles.fieldLabel}>Dealer Name :</div>
                                 <div className={styles.fieldValue}>
-                                    {dealerId !== 'all'
-                                        ? (dealers.find(d => d.id === dealerId)?.name || dealerId)
-                                        : (units[0]?.lineItem?.inward?.dealer?.name || 'ALL DEALERS')
-                                    }
+                                    <Select
+                                        style={{ width: 200 }}
+                                        value={dealerFilter}
+                                        onChange={setDealerFilter}
+                                        size="small"
+                                    >
+                                        <Select.Option value="all">ALL DEALERS</Select.Option>
+                                        {Array.from(new Set(units.map(u => u.lineItem?.inward?.dealer?.id).filter(Boolean))).map(id => {
+                                            const dealerName = units.find(u => u.lineItem?.inward?.dealer?.id === id)?.lineItem?.inward?.dealer?.name;
+                                            return <Select.Option key={id as string} value={id as string}>{dealerName}</Select.Option>;
+                                        })}
+                                    </Select>
                                 </div>
                             </div>
                             <div className={styles.detailField}>
                                 <div className={styles.fieldLabel}>Current Stock :</div>
-                                <div className={styles.fieldValue}>{units.length}</div>
+                                <div className={styles.fieldValue}>{units.filter(u => dealerFilter === 'all' || u.lineItem?.inward?.dealer?.id === dealerFilter).length}</div>
                             </div>
                         </Space>
                     </Col>
@@ -234,7 +247,7 @@ const VehicleInventoryDetail: React.FC = () => {
             <div style={{ padding: '24px' }}>
                 <Table
                     columns={columns}
-                    dataSource={units}
+                    dataSource={units.filter(u => dealerFilter === 'all' || u.lineItem?.inward?.dealer?.id === dealerFilter)}
                     loading={loading}
                     rowKey="id"
                     pagination={false}

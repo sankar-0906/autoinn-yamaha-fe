@@ -165,49 +165,8 @@ const CompanySettings: React.FC = () => {
                                                     <Input placeholder="Enter Phone" maxLength={10} />
                                                 </Form.Item>
                                             </Col>
-                                            <Col span={12}>
-                                                <Form.Item
-                                                    name="cin"
-                                                    label="CIN"
-                                                    rules={[
-                                                        { required: true, message: 'Enter CIN number' },
-                                                        { pattern: /^[A-Z0-9]{21}$/, message: 'Enter valid CIN number' }
-                                                    ]}
-                                                    normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
-                                                >
-                                                    <Input placeholder="Enter CIN" maxLength={21} />
-                                                </Form.Item>
-                                            </Col>
-                                            <Col span={12}>
-                                                <Form.Item
-                                                    name="pan"
-                                                    label="PAN"
-                                                    rules={[
-                                                        { required: true, message: 'Enter PAN number' },
-                                                        { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, message: 'Enter valid PAN number' }
-                                                    ]}
-                                                    normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
-                                                >
-                                                    <Input placeholder="Enter PAN" maxLength={10} />
-                                                </Form.Item>
-                                            </Col>
-                                            <Col span={24}>
-                                                <Form.Item
-                                                    name="contactPerson"
-                                                    label="Contact Person"
-                                                    rules={[
-                                                        { required: true, message: 'Enter contact person' },
-                                                        { pattern: /^[a-zA-Z\s]+$/, message: 'Enter valid name' }
-                                                    ]}
-                                                    normalize={(value) => {
-                                                        const val = (value || '').replace(/[^a-zA-Z\s]/g, '');
-                                                        return val.replace(/\b\w+/g, (txt: string) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
-                                                    }}
-                                                >
-                                                    <Input placeholder="Enter Contact Person" />
-                                                </Form.Item>
-                                            </Col>
                                         </Row>
+
                                         <Form.Item>
                                             <Button type="primary" htmlType="submit" loading={saving} className={styles.saveBtn}>
                                                 Save Settings
