@@ -570,10 +570,22 @@ const InwardImportPage: React.FC = () => {
                                 </Form.Item>
                             </Col>
                             <Col span={8}><Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item></Col>
-                            <Col span={16}><Form.Item name="address" label="Billing Address"><Input.TextArea rows={1} /></Form.Item></Col>
-                            <Col span={12}><Form.Item name="deliveryAddress" label="Delivery Address"><Input.TextArea rows={1} /></Form.Item></Col>
-                            <Col span={6}><Form.Item name="placeOfSupply" label="Place of Supply"><Input /></Form.Item></Col>
-                            <Col span={6}><Form.Item name="daNumber" label="DA Number"><Input /></Form.Item></Col>
+                            
+                            <Col span={12}><Form.Item name="address" label="Billing Address"><Input.TextArea rows={1} /></Form.Item></Col>
+                            <Col span={12}><Form.Item name="deliveryAddress" label="Shipping Address"><Input.TextArea rows={1} /></Form.Item></Col>
+                            
+                            <Col span={8}><Form.Item name="placeOfSupply" label="Policy of Supply"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="daNumber" label="DA Number"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="daDate" label="DA Date"><DatePicker format="DD-MM-YYYY" style={{ width: '100%' }} /></Form.Item></Col>
+
+                            <Col span={8}><Form.Item name="modeOfTransport" label="Mode of Dispatch"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="transporter" label="Transporter"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="vehicleNo" label="Vehicle No"><Input /></Form.Item></Col>
+
+                            <Col span={8}><Form.Item name="from" label="From"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="to" label="To"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="insuranceCo" label="Insurance No"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="policyNumber" label="Policy No"><Input /></Form.Item></Col>
                         </Row>
 
                         <Title level={5} style={{ marginTop: 20 }}>Vehicles List</Title>

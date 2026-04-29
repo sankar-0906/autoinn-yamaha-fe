@@ -5,6 +5,7 @@ import {
 import { InboxOutlined, SaveOutlined, EditOutlined, PictureOutlined } from '@ant-design/icons';
 import { processInwardPdf, createVehicleStockInward, updateVehicleStockInward, lookupVehicleImage } from '../../../api/vehicleStockInward';
 import { getUniqueModels, getColorsByModel } from '../../../api/vehicleMaster';
+import { getBranches } from '../../../api/branch';
 import dayjs from 'dayjs';
 import styles from '../VehicleStockInward.module.css';
 
@@ -30,6 +31,7 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
     } | null>(null);
     const [form] = Form.useForm();
     const [availableModels, setAvailableModels] = useState<string[]>([]);
+    const [branches, setBranches] = useState<any[]>([]);
     const [rowColors, setRowColors] = useState<Record<number, any[]>>({});
 
     const isViewOnly = mode === 'view';
@@ -38,10 +40,14 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
     React.useEffect(() => {
         const fetchMetadata = async () => {
             try {
-                const res = await getUniqueModels();
-                setAvailableModels(res.data?.data || []);
+                const [modelsRes, branchesRes] = await Promise.all([
+                    getUniqueModels(),
+                    getBranches({ page: 1, size: 1000 })
+                ]);
+                setAvailableModels(modelsRes.data?.data || []);
+                setBranches(branchesRes.data?.data?.branch || branchesRes.data?.branch || []);
             } catch (error) {
-                console.error('Failed to fetch models', error);
+                console.error('Failed to fetch metadata', error);
             }
         };
         fetchMetadata();
@@ -535,6 +541,14 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                             <Form.Item name="dealerName" label="Dealer Name"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
+                            <Form.Item name="branchId" label="Branch">
+                                <Select
+                                    placeholder="Select Branch"
+                                    options={branches.map(b => ({ label: b.name, value: b.id }))}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
                             <Form.Item
                                 name="invoiceNo"
                                 label="Invoice No"
@@ -551,11 +565,11 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                             <Form.Item name="address" label="Billing Address"><Input.TextArea rows={2} /></Form.Item>
                         </Col>
                         <Col span={12}>
-                            <Form.Item name="deliveryAddress" label="Delivery Address"><Input.TextArea rows={2} /></Form.Item>
+                            <Form.Item name="deliveryAddress" label="Shipping Address"><Input.TextArea rows={2} /></Form.Item>
                         </Col>
 
                         <Col span={8}>
-                            <Form.Item name="placeOfSupply" label="Place of Supply"><Input /></Form.Item>
+                            <Form.Item name="placeOfSupply" label="Policy of Supply"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item
@@ -571,26 +585,26 @@ const InwardImportModal: React.FC<InwardImportModalProps> = ({ open, onClose, on
                         </Col>
 
                         <Col span={8}>
-                            <Form.Item name="modeOfTransport" label="Mode of Transport"><Input /></Form.Item>
+                            <Form.Item name="modeOfTransport" label="Mode of Dispatch"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
                             <Form.Item name="transporter" label="Transporter"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="vehicleNo" label="Truck No"><Input /></Form.Item>
+                            <Form.Item name="vehicleNo" label="Vehicle No"><Input /></Form.Item>
                         </Col>
 
                         <Col span={8}>
-                            <Form.Item name="from" label="Dispatch From"><Input /></Form.Item>
+                            <Form.Item name="from" label="From"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="to" label="Dispatch To"><Input /></Form.Item>
+                            <Form.Item name="to" label="To"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="insuranceCo" label="Insurance Company"><Input /></Form.Item>
+                            <Form.Item name="insuranceCo" label="Insurance No"><Input /></Form.Item>
                         </Col>
                         <Col span={8}>
-                            <Form.Item name="policyNumber" label="Policy Number"><Input /></Form.Item>
+                            <Form.Item name="policyNumber" label="Policy No"><Input /></Form.Item>
                         </Col>
                     </Row>
 
