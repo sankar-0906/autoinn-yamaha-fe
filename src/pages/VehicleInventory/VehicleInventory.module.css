@@ -205,18 +205,24 @@
 }
 
 .detailField {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
 }
 
 .fieldValue {
-    padding: 6px 12px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    font-weight: 500;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.customSelect :global(.ant-select-selector) {
+    padding: 4px 12px !important;
+    height: auto !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
 }
 
 .detailImage {
-    max-height: 220px;
+    max-height: 240px;
     object-fit: contain;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
 }

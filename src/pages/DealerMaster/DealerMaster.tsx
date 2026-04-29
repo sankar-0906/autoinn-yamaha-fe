@@ -96,15 +96,29 @@ const DealerMasterPage: React.FC = () => {
     const handleSave = async (values: any) => {
         setSaving(true);
         try {
+            let updatedData;
             if (selectedDealer) {
-                await updateDealer(selectedDealer.id, values);
+                const res = await updateDealer(selectedDealer.id, values);
+                updatedData = res.data?.data || res.data;
                 message.success('Dealer updated successfully');
             } else {
-                await createDealer(values);
+                const res = await createDealer(values);
+                updatedData = res.data?.data || res.data;
                 message.success('Dealer created successfully');
             }
+            
+            // Manually update local state for instant feedback
+            if (updatedData) {
+                if (selectedDealer) {
+                    setDealers(prev => prev.map(d => d.id === selectedDealer.id ? { ...d, ...updatedData } : d));
+                } else {
+                    fetchDealers(); // Refetch for new records to get proper pagination
+                }
+            }
+            
             setModalOpen(false);
-            fetchDealers();
+            setSelectedDealer(null); // Clear selected dealer
+            if (selectedDealer) fetchDealers(); // Still refetch to ensure everything is in sync
         } catch (error: any) {
             message.error(error.message || 'Failed to save dealer');
         } finally {

@@ -21,6 +21,13 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+
+    // Attach selected branch IDs
+    const branchIds = localStorage.getItem('selectedBranchIds');
+    if (branchIds) {
+      config.headers['x-branch-ids'] = branchIds;
+    }
+
     return config;
   },
   (error) => {

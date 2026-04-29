@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Input, Typography, Space, message, Tabs } from 'antd';
+import { Table, Button, Input, Typography, Space, message, Tabs, Tag } from 'antd';
 import { PlusOutlined, SearchOutlined, LeftOutlined, TeamOutlined, UserDeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -122,7 +122,19 @@ const EmployeePage: React.FC = () => {
             title: 'Branch',
             dataIndex: ['profile', 'branch'],
             key: 'branch',
-            render: (branches: any[]) => branches?.map(b => b.name).join(', ') || '-'
+            render: (branches: any[]) => (
+                <Space wrap>
+                    {branches && branches.length > 0 ? (
+                        branches.map((b: any) => (
+                            <Tag color="#006a71" key={b.id}>
+                                {b.name}
+                            </Tag>
+                        ))
+                    ) : (
+                        '-'
+                    )}
+                </Space>
+            )
         },
         {
             title: 'Department',

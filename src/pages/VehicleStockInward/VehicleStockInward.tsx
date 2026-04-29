@@ -14,12 +14,14 @@ import {
 } from '@ant-design/icons';
 import { getVehicleStockInwards, deleteVehicleStockInward } from '../../api/vehicleStockInward';
 import styles from './VehicleStockInward.module.css';
+import { useBranch } from '../../context/BranchContext';
 
 const { Title } = Typography;
 const { confirm } = Modal;
 
 const VehicleStockInwardPage: React.FC = () => {
     const navigate = useNavigate();
+    const { selectedBranchIds } = useBranch();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any[]>([]);
     const [searchText, setSearchText] = useState('');
@@ -41,7 +43,7 @@ const VehicleStockInwardPage: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [selectedBranchIds]); // Trigger refresh when global branch selection changes
 
     const handleDelete = (id: string) => {
         confirm({
@@ -88,6 +90,11 @@ const VehicleStockInwardPage: React.FC = () => {
             title: 'Dealer Name',
             dataIndex: 'dealerName',
             key: 'dealerName',
+        },
+        {
+            title: 'Branch',
+            key: 'branch',
+            render: (_: any, record: any) => record.branch?.name || '-',
         },
         {
             title: 'Date',

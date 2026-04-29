@@ -24,7 +24,6 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
     const [countries, setCountries] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
     const [cities, setCities] = useState<any[]>([]);
-    const [branches, setBranches] = useState<any[]>([]);
     const [gstName, setGstName] = useState('');
     const [gstStatus, setGstStatus] = useState('');
 
@@ -35,18 +34,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                 setCountries(res.data?.data || res.data || []);
             } catch (error) { }
         };
-        const fetchBranches = async () => {
-            try {
-                const res = await getBranches();
-                // Extract from result.branch as per backend structure
-                const fetchedBranches = res.data?.data?.branch || res.data?.branch || res.data?.data || res.data || [];
-                setBranches(Array.isArray(fetchedBranches) ? fetchedBranches : []);
-            } catch (error) {
-                setBranches([]);
-            }
-        };
         fetchCountries();
-        fetchBranches();
     }, []);
 
     useEffect(() => {
@@ -228,6 +216,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
             onOk={handleOk}
             width={1000}
             confirmLoading={loading}
+            destroyOnClose
             title={
                 <div className={styles.modalHeader}>
                     <Title level={4} className={styles.modalTitle}>Dealer Master</Title>
@@ -252,22 +241,19 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                         </Form.Item>
                     </Col>
                     <Col span={12}>
-                        <Form.Item name="dealerType" label={<span className={styles.formLabel}>GST Dealer Type</span>} rules={[{ required: true, message: 'Dealer Type is required' }]}>
-                            <Select placeholder="Select GST Dealer Type" disabled={readOnly} allowClear>
-                                <Option value="Registered Dealer">Registered Dealer</Option>
-                                <Option value="Unregistered Dealer">Unregistered Dealer</Option>
-                                <Option value="Composition Dealer">Composition Dealer</Option>
-                            </Select>
+                        <Form.Item name="dealerCode" label={<span className={styles.formLabel}>Dealer Code</span>}>
+                            <Input placeholder="Enter Dealer Code" disabled={readOnly} />
                         </Form.Item>
                     </Col>
                 </Row>
 
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Form.Item name="status" label={<span className={styles.formLabel}>Status</span>} rules={[{ required: true }]}>
-                            <Select placeholder="Select Status" disabled={readOnly} allowClear>
-                                <Option value="Active">Active</Option>
-                                <Option value="Inactive">Inactive</Option>
+                        <Form.Item name="dealerType" label={<span className={styles.formLabel}>GST Dealer Type</span>} rules={[{ required: true, message: 'Dealer Type is required' }]}>
+                            <Select placeholder="Select GST Dealer Type" disabled={readOnly} allowClear>
+                                <Option value="Registered Dealer">Registered Dealer</Option>
+                                <Option value="Unregistered Dealer">Unregistered Dealer</Option>
+                                <Option value="Composition Dealer">Composition Dealer</Option>
                             </Select>
                         </Form.Item>
                     </Col>
@@ -308,12 +294,6 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                 maxLength={15}
                                 onChange={handleGstChange}
                                 style={{ textTransform: 'uppercase' }}
-                                onKeyPress={(e) => {
-                                    const char = String.fromCharCode(e.which);
-                                    if (!/[A-Za-z0-9]/.test(char)) {
-                                        e.preventDefault();
-                                    }
-                                }}
                             />
                         </Form.Item>
                         {gstName && (
@@ -335,6 +315,25 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                             rules={[{ type: 'email', message: 'Enter a valid email address' }]}
                         >
                             <Input placeholder="Enter Email" disabled={readOnly} />
+                        </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                        <Form.Item
+                            name="password"
+                            label={<span className={styles.formLabel}>Password</span>}
+                        >
+                            <Input.Password placeholder="Enter Password" disabled={readOnly} />
+                        </Form.Item>
+                    </Col>
+                </Row>
+
+                <Row gutter={24}>
+                    <Col span={12}>
+                        <Form.Item name="status" label={<span className={styles.formLabel}>Status</span>} rules={[{ required: true }]}>
+                            <Select placeholder="Select Status" disabled={readOnly} allowClear>
+                                <Option value="Active">Active</Option>
+                                <Option value="Inactive">Inactive</Option>
+                            </Select>
                         </Form.Item>
                     </Col>
                 </Row>
@@ -370,7 +369,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                 { required: true, message: 'This field is required' },
                                 { pattern: /^[a-zA-Z0-9\s,.-]+$/, message: 'Invalid characters in Locality' }
                             ]}
-                            normalize={(value) => (value || '').replace(/[^a-zA-Z0-9\s,.-]/g, '')}
+                            normalize={(value) => (value || '').replace(/\b\w/g, char => char.toUpperCase())}
                         >
                             <Input placeholder="Locality" disabled={readOnly} />
                         </Form.Item>
@@ -474,7 +473,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                                     { required: true, message: 'This field is required' },
                                                     { pattern: /^[a-zA-Z0-9\s,.-]+$/, message: 'Invalid characters in Locality' }
                                                 ]}
-                                                normalize={(value) => (value || '').replace(/[^a-zA-Z0-9\s,.-]/g, '')}
+                                                normalize={(value) => (value || '').replace(/\b\w/g, char => char.toUpperCase())}
                                             >
                                                 <Input placeholder="Locality" disabled={readOnly} />
                                             </Form.Item>
@@ -495,9 +494,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                         </Col>
                                         <Col span={8}>
                                             <Form.Item {...restField} name={[name, 'branchId']} label={<span className={styles.formLabel}>Branch</span>}>
-                                                <Select placeholder="Select Branch" disabled={readOnly} allowClear style={{ width: '100%' }}>
-                                                    {branches.map(b => <Option key={b.id} value={b.id}>{b.name}</Option>)}
-                                                </Select>
+                                                <Input placeholder="Enter Branch" disabled={readOnly} style={{ width: '100%' }} />
                                             </Form.Item>
                                         </Col>
                                     </Row>
@@ -547,6 +544,32 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                                                 >
                                                     {cities.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
                                                 </Select>
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+
+                                    <Row gutter={24}>
+                                        <Col span={12}>
+                                            <Form.Item
+                                                {...restField}
+                                                name={[name, 'contactPerson']}
+                                                label={<span className={styles.formLabel}>Contact Person</span>}
+                                                normalize={(value) => (value || '').replace(/\b\w/g, char => char.toUpperCase())}
+                                            >
+                                                <Input placeholder="Enter Contact Person" disabled={readOnly} />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item
+                                                {...restField}
+                                                name={[name, 'phoneNumber']}
+                                                label={<span className={styles.formLabel}>Phone Number</span>}
+                                                rules={[
+                                                    { pattern: /^[0-9]{10}$/, message: 'Enter Valid mobile number' }
+                                                ]}
+                                                normalize={(value) => (value || '').replace(/[^0-9]/g, '').slice(0, 10)}
+                                            >
+                                                <Input placeholder="Enter Phone Number" disabled={readOnly} maxLength={10} />
                                             </Form.Item>
                                         </Col>
                                     </Row>

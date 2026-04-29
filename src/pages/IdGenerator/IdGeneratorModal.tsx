@@ -87,7 +87,7 @@ const IdGeneratorModal: React.FC<IdGeneratorModalProps> = ({ open, onClose, onSa
                             name="text"
                             label={<span className={styles.formLabel}>Static text parameter</span>}
                             rules={[{ required: true, message: 'Required' }]}
-                            normalize={(value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '')}
+                            normalize={(value) => (value || '').toUpperCase()}
                         >
                             <Input placeholder="e.g. CNB" style={{ textTransform: 'uppercase' }} />
                         </Form.Item>

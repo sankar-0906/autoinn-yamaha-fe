@@ -7,6 +7,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { processInwardPdf, createVehicleStockInward, updateVehicleStockInward, getVehicleStockInwardById, lookupVehicleImage, getInwardPdfJobStatus } from '../../api/vehicleStockInward';
 import { getUniqueModels, getColorsByModel } from '../../api/vehicleMaster';
 import { getDealers } from '../../api/dealer';
+import { getBranches } from '../../api/branch';
 import dayjs from 'dayjs';
 import styles from './VehicleStockInward.module.css';
 
@@ -25,6 +26,7 @@ const InwardImportPage: React.FC = () => {
     const [availableModels, setAvailableModels] = useState<string[]>([]);
     const [rowColors, setRowColors] = useState<Record<number, any[]>>({});
     const [dealers, setDealers] = useState<any[]>([]);
+    const [branches, setBranches] = useState<any[]>([]);
     const [entryMode, setEntryMode] = useState<'choice' | 'pdf' | 'manual' | 'data'>(id ? 'data' : 'choice');
     const [, setJobId] = useState<string | null>(null);
 
@@ -45,42 +47,12 @@ const InwardImportPage: React.FC = () => {
                     if (initialData.VEHICLES && Array.isArray(initialData.VEHICLES) && initialData.VEHICLES.length > 0) {
                         vehiclesData = initialData.VEHICLES;
                     } else if (initialData.items && Array.isArray(initialData.items) && initialData.items.length > 0) {
-                        // Try dynamic recovery for legacy data
-                        try {
-                            const recoveryResponse = await fetch('/api/vehicle-stock-inward/recover-data', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ vehicles: initialData.items })
-                            });
-
-                            if (recoveryResponse.ok) {
-                                const recoveryResult = await recoveryResponse.json();
-                                if (recoveryResult.success) {
-                                    vehiclesData = recoveryResult.data;
-                                } else {
-                                    vehiclesData = initialData.items.map((item: any) => ({
-                                        ...item,
-                                        modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
-                                        qty: 1,
-                                        colorCode: item.image?.code || 'UNKNOWN'
-                                    }));
-                                }
-                            } else {
-                                vehiclesData = initialData.items.map((item: any) => ({
-                                    ...item,
-                                    modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
-                                    qty: 1,
-                                    colorCode: item.image?.code || 'UNKNOWN'
-                                }));
-                            }
-                        } catch (error) {
-                            vehiclesData = initialData.items.map((item: any) => ({
-                                ...item,
-                                modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
-                                qty: 1,
-                                colorCode: item.image?.code || 'UNKNOWN'
-                            }));
-                        }
+                        vehiclesData = initialData.items.map((item: any) => ({
+                            ...item,
+                            modelCode: item.vehicleMaster?.modelCode || 'UNKNOWN',
+                            qty: 1,
+                            colorCode: item.image?.code || 'UNKNOWN'
+                        }));
                     }
 
                     // Group vehicles by model code to calculate proper quantities
@@ -126,6 +98,7 @@ const InwardImportPage: React.FC = () => {
                         ...initialData,
                         date: initialData.date ? dayjs(initialData.date) : null,
                         daDate: initialData.daDate ? dayjs(initialData.daDate) : null,
+                        branchId: initialData.branchId
                     });
                 }
             } catch (err) {
@@ -139,12 +112,14 @@ const InwardImportPage: React.FC = () => {
     useEffect(() => {
         const fetchMetadata = async () => {
             try {
-                const [modelsRes, dealersRes] = await Promise.all([
+                const [modelsRes, dealersRes, branchesRes] = await Promise.all([
                     getUniqueModels(),
-                    getDealers({ limit: 1000 })
+                    getDealers({ limit: 1000 }),
+                    getBranches({ page: 1, size: 1000 })
                 ]);
                 setAvailableModels(modelsRes.data || []);
                 setDealers(dealersRes.data?.dealers || dealersRes.dealers || []);
+                setBranches(branchesRes.data?.data?.branch || branchesRes.data?.branch || []);
             } catch (error) {
                 console.error('Failed to fetch metadata', error);
             }
@@ -153,28 +128,26 @@ const InwardImportPage: React.FC = () => {
         fetchData();
     }, [id, form]);
 
-    // NEW: Dynamic image lookup effect
     useEffect(() => {
         const fetchMissingImages = async () => {
-            if (extractedData?.VEHICLES) {
+            if (extractedData?.VEHICLES && extractedData.VEHICLES.length > 0) {
                 let changed = false;
                 const newVehicles = [...extractedData.VEHICLES];
 
                 for (let i = 0; i < newVehicles.length; i++) {
                     const v = newVehicles[i];
-                    // If we have model+color but no image loaded (not even 'NONE')
-                    if (v.modelCode && v.colorCode && v.imageUrl === undefined) {
-                        console.log(`[FRONTEND-LOOKUP] Looking up image for ${v.modelCode} / ${v.colorCode}`);
+                    // If we have codes but NO image (undefined or empty string), try to fetch it
+                    if (v.modelCode && v.colorCode && !v.imageUrl) {
                         try {
                             const res = await lookupVehicleImage(v.modelCode, v.colorCode);
                             if (res.data.success && res.data.data) {
-                                console.log(`[FRONTEND-LOOKUP] Found: ${res.data.data}`);
                                 newVehicles[i].imageUrl = res.data.data;
+                                changed = true;
                             } else {
-                                console.log(`[FRONTEND-LOOKUP] No image found for ${v.modelCode} / ${v.colorCode}`);
+                                // Mark as NONE so we don't keep retrying if not found
                                 newVehicles[i].imageUrl = 'NONE';
+                                changed = true;
                             }
-                            changed = true;
                         } catch (err) {
                             newVehicles[i].imageUrl = 'NONE';
                             changed = true;
@@ -183,7 +156,7 @@ const InwardImportPage: React.FC = () => {
                 }
 
                 if (changed) {
-                    setExtractedData({ ...extractedData, VEHICLES: newVehicles });
+                    setExtractedData(prev => ({ ...prev, VEHICLES: newVehicles }));
                 }
             }
         };
@@ -208,7 +181,6 @@ const InwardImportPage: React.FC = () => {
                     setProcessingStep('');
                     message.error(job.message || 'PDF processing failed');
                 }
-                // Continue polling if still 'processing'
             } catch (err) {
                 clearInterval(interval);
                 setJobId(null);
@@ -216,33 +188,28 @@ const InwardImportPage: React.FC = () => {
                 setProcessingStep('');
                 message.error('Failed to check processing status');
             }
-        }, 3000); // Poll every 3 seconds
+        }, 3000);
     };
 
     const handlePdfProcessingComplete = async (data: any) => {
         try {
-            // Autofill and parse model codes
             if (data["VEHICLES"]) {
                 data["VEHICLES"] = await Promise.all(data["VEHICLES"].map(async (v: any) => {
                     let modelCode = v.modelCode || '';
                     let colorCode = v.colorCode || '';
                     let imageUrl = v.imageUrl || '';
 
-                    // Parse combined format MODEL-COLOR
                     if (modelCode.includes('-')) {
                         const parts = modelCode.split('-');
                         modelCode = parts[0];
                         if (!colorCode) colorCode = parts[1] || '';
                     }
 
-                    // Try to trigger initial image lookup for the fetched data
                     if (modelCode && colorCode) {
                         try {
                             const imgRes = await lookupVehicleImage(modelCode, colorCode);
                             imageUrl = imgRes.data?.data || '';
-                        } catch (e) {
-                            console.error('Initial image lookup failed', e);
-                        }
+                        } catch (e) { }
                     }
 
                     return { ...v, modelCode, colorCode, imageUrl };
@@ -260,7 +227,6 @@ const InwardImportPage: React.FC = () => {
             };
 
             form.setFieldsValue({
-                // dealerName: data["NAME"], // User requested NOT to auto-fill dealer name
                 address: data["ADDRESS"],
                 deliveryAddress: data["ADDRESS OF DELIVERY"],
                 invoiceNo: data["INVOICE NO"]?.toUpperCase(),
@@ -276,7 +242,7 @@ const InwardImportPage: React.FC = () => {
                 to: data["TO"],
                 insuranceCo: data["INSURANCE CO"]
             });
-            message.success('Data extraction successful! Please select the Dealer.');
+            message.success('Data extraction successful! Please select the Dealer and Branch.');
         } catch (err: any) {
             message.error('Data processing failed');
         } finally {
@@ -290,11 +256,9 @@ const InwardImportPage: React.FC = () => {
         setProcessingStep('Uploading PDF for processing...');
         try {
             const res = await processInwardPdf(file);
-
             if (res.data.success && res.data.jobId) {
                 setJobId(res.data.jobId);
-                setProcessingStep('Processing PDF with OCR... This may take 15-25 seconds.');
-                // Start polling
+                setProcessingStep('Processing PDF with OCR...');
                 pollJob(res.data.jobId);
             } else {
                 throw new Error('No job ID returned from server');
@@ -309,29 +273,17 @@ const InwardImportPage: React.FC = () => {
 
     const handleManualEntry = () => {
         form.resetFields();
-        setExtractedData({
-            "VEHICLES": []
-        });
+        setExtractedData({ "VEHICLES": [] });
         setEntryMode('manual');
     };
 
     const handleSave = async () => {
         try {
             const values = await form.validateFields();
-
-            // Validate vehicles list
             const vehicles = extractedData?.VEHICLES || [];
             if (vehicles.length === 0) {
                 message.error('Please add at least one vehicle');
                 return;
-            }
-
-            for (let i = 0; i < vehicles.length; i++) {
-                const v = vehicles[i];
-                if (!v.modelCode || !v.colorCode || !v.chassisNo || !v.engineNo) {
-                    message.error(`Please complete all details for vehicle #${i + 1} (Model, Color, Chassis No, and Engine No)`);
-                    return;
-                }
             }
 
             setLoading(true);
@@ -362,8 +314,6 @@ const InwardImportPage: React.FC = () => {
 
     const handleCellChange = async (value: string, rowIndex: number, dataIndex: string) => {
         let processedValue = value?.toUpperCase() || '';
-
-        // Enforce alphanumeric and max length for identifiers
         if (dataIndex === 'chassisNo' || dataIndex === 'engineNo') {
             processedValue = processedValue.replace(/[^A-Z0-9]/g, '');
             if (processedValue.length > 17) processedValue = processedValue.slice(0, 17);
@@ -372,25 +322,19 @@ const InwardImportPage: React.FC = () => {
         const updated = [...extractedData["VEHICLES"]];
         const row = { ...updated[rowIndex], [dataIndex]: processedValue };
 
-        // If model changes, clear color and fetch new color list
         if (dataIndex === 'modelCode') {
-            row.colorCode = ''; // Reset color
+            row.colorCode = '';
             try {
                 const colorRes = await getColorsByModel(processedValue);
                 setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: colorRes.data || [] }));
-            } catch (e) {
-                console.error('Failed to fetch colors for row', rowIndex, e);
-            }
+            } catch (e) { }
         }
 
-        // Trigger image lookup if either model or color changes
         if ((dataIndex === 'modelCode' || dataIndex === 'colorCode') && row.modelCode) {
             try {
                 const imgRes = await lookupVehicleImage(row.modelCode, row.colorCode);
                 row.imageUrl = imgRes.data?.data || '';
-            } catch (e) {
-                console.error('Dynamic image lookup failed', e);
-            }
+            } catch (e) { }
         }
 
         updated[rowIndex] = row;
@@ -398,18 +342,8 @@ const InwardImportPage: React.FC = () => {
     };
 
     const handleAddVehicle = () => {
-        const newVehicle = {
-            modelCode: '',
-            chassisNo: '',
-            engineNo: '',
-            colorCode: '',
-            qty: 1
-        };
-
-        setExtractedData((prev: any) => ({
-            ...prev,
-            VEHICLES: [...(prev?.VEHICLES || []), newVehicle]
-        }));
+        const newVehicle = { modelCode: '', chassisNo: '', engineNo: '', colorCode: '', qty: 1 };
+        setExtractedData((prev: any) => ({ ...prev, VEHICLES: [...(prev?.VEHICLES || []), newVehicle] }));
     };
 
     const handleCancel = () => {
@@ -422,7 +356,6 @@ const InwardImportPage: React.FC = () => {
         key: dataIndex,
         render: (_: any, record: any, rowIndex: number) => {
             if (isViewOnly) return <div style={{ padding: '4px 11px' }}>{record[dataIndex] || ''}</div>;
-
             return (
                 <Input
                     value={record[dataIndex]}
@@ -481,9 +414,7 @@ const InwardImportPage: React.FC = () => {
                                 try {
                                     const res = await getColorsByModel(record.modelCode);
                                     setRowColors((prev: Record<number, any[]>) => ({ ...prev, [rowIndex]: res.data || [] }));
-                                } catch (e) {
-                                    console.error('OnFocus colors fetch failed', e);
-                                }
+                                } catch (e) { }
                             }
                         }}
                         options={colors.map((c: any) => ({ label: c.code.toUpperCase(), value: c.code.toUpperCase() }))}
@@ -499,25 +430,10 @@ const InwardImportPage: React.FC = () => {
             render: (_: any, record: any) => (
                 record.imageUrl && record.imageUrl !== 'NONE' ? (
                     <div style={{ padding: '8px 0' }}>
-                        <img
-                            src={record.imageUrl}
-                            alt="vehicle"
-                            style={{
-                                width: 320,
-                                height: 180,
-                                objectFit: 'contain',
-                                border: '1px solid #f0f0f0',
-                                background: '#fff',
-                                borderRadius: '12px',
-                                boxShadow: 'none',
-                                padding: '8px'
-                            }}
-                        />
+                        <img src={record.imageUrl} alt="vehicle" style={{ width: 320, height: 180, objectFit: 'contain', border: '1px solid #f0f0f0', background: '#fff', borderRadius: '12px', padding: '8px' }} />
                     </div>
                 ) : (
-                    <div style={{ width: 320, height: 180, background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#bfbfbf', border: '1px dashed #d9d9d9', borderRadius: '12px', margin: '0 auto', boxShadow: 'none' }}>
-                        No Image
-                    </div>
+                    <div style={{ width: 320, height: 180, background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#bfbfbf', border: '1px dashed #d9d9d9', borderRadius: '12px', margin: '0 auto' }}>No Image</div>
                 )
             ),
             width: 350,
@@ -527,16 +443,11 @@ const InwardImportPage: React.FC = () => {
             key: 'delete',
             width: 70,
             render: (_: any, __: any, rowIndex: number) => (
-                <Button
-                    type="text"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => {
-                        const updated = [...extractedData["VEHICLES"]];
-                        updated.splice(rowIndex, 1);
-                        setExtractedData({ ...extractedData, VEHICLES: updated });
-                    }}
-                />
+                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => {
+                    const updated = [...extractedData["VEHICLES"]];
+                    updated.splice(rowIndex, 1);
+                    setExtractedData({ ...extractedData, VEHICLES: updated });
+                }} />
             )
         }] : [])
     ];
@@ -545,21 +456,15 @@ const InwardImportPage: React.FC = () => {
         if (isViewOnly) return "View Inward Record";
         if (isEditMode) return "Edit Inward Record";
         if (entryMode === 'manual') return "Manual Inward Entry";
-        return "New Inward Record";
+        return "Inward Record";
     };
 
     return (
         <div className={styles.pageContainer}>
             <div className={styles.header}>
                 <Space size="large">
-                    <Button
-                        icon={<ArrowLeftOutlined />}
-                        shape="circle"
-                        onClick={() => navigate('/company/vehicle-stock-inward')}
-                    />
-                    <Title level={4} style={{ margin: 0 }}>
-                        {getPageTitle()}
-                    </Title>
+                    <Button icon={<ArrowLeftOutlined />} shape="circle" onClick={() => navigate('/company/vehicle-stock-inward')} />
+                    <Title level={4} style={{ margin: 0 }}>{getPageTitle()}</Title>
                 </Space>
             </div>
 
@@ -635,10 +540,6 @@ const InwardImportPage: React.FC = () => {
                                 Upload the Yamaha Dispatch Advice PDF to automatically extract vehicle details.
                             </p>
                         </Dragger>
-                        <div style={{ marginTop: 24, textAlign: 'center' }}>
-                            <Text type="secondary">PDF Parsing failed? </Text>
-                            <Button type="link" onClick={handleManualEntry}>Try Manual Entry Instead</Button>
-                        </div>
                     </div>
                 )}
 
@@ -647,11 +548,7 @@ const InwardImportPage: React.FC = () => {
                         <Row gutter={16}>
                             <Col span={8}>
                                 <Form.Item name="dealerName" label="Dealer Name" rules={[{ required: true, message: 'Select dealer' }]}>
-                                    <Select
-                                        showSearch
-                                        placeholder="Select Dealer"
-                                        optionFilterProp="children"
-                                    >
+                                    <Select showSearch placeholder="Select Dealer" optionFilterProp="children">
                                         {dealers.map(d => (
                                             <Select.Option key={d.id} value={d.name}>{d.name}</Select.Option>
                                         ))}
@@ -659,74 +556,37 @@ const InwardImportPage: React.FC = () => {
                                 </Form.Item>
                             </Col>
                             <Col span={8}>
-                                <Form.Item
-                                    name="invoiceNo"
-                                    label="Invoice No"
-                                    getValueFromEvent={(e) => e.target.value.toUpperCase()}
-                                >
+                                <Form.Item name="branchId" label="Branch" rules={[{ required: true, message: 'Select branch' }]}>
+                                    <Select showSearch placeholder="Select Branch" optionFilterProp="children">
+                                        {branches.map(b => (
+                                            <Select.Option key={b.id} value={b.id}>{b.name}</Select.Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                                <Form.Item name="invoiceNo" label="Invoice No" getValueFromEvent={(e) => e.target.value.toUpperCase()}>
                                     <Input style={{ textTransform: 'uppercase' }} />
                                 </Form.Item>
                             </Col>
-                            <Col span={8}><Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" disabledDate={(current) => current && current > dayjs().endOf('day')} /></Form.Item></Col>
-
-                            <Col span={12}><Form.Item name="address" label="Billing Address"><Input.TextArea rows={2} /></Form.Item></Col>
-                            <Col span={12}><Form.Item name="deliveryAddress" label="Delivery Address"><Input.TextArea rows={2} /></Form.Item></Col>
-
-                            <Col span={8}><Form.Item name="placeOfSupply" label="Place of Supply"><Input /></Form.Item></Col>
-                            <Col span={8}>
-                                <Form.Item
-                                    name="daNumber"
-                                    label="DA Number"
-                                    getValueFromEvent={(e) => e.target.value.replace(/[^0-9]/g, '')}
-                                >
-                                    <Input />
-                                </Form.Item>
-                            </Col>
-                            <Col span={8}><Form.Item name="daDate" label="DA Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" disabledDate={(current) => current && current > dayjs().endOf('day')} /></Form.Item></Col>
-
-                            <Col span={8}><Form.Item name="modeOfTransport" label="Mode of Transport"><Input /></Form.Item></Col>
-                            <Col span={8}><Form.Item name="transporter" label="Transporter"><Input /></Form.Item></Col>
-                            <Col span={8}><Form.Item name="vehicleNo" label="Truck No"><Input /></Form.Item></Col>
-
-                            <Col span={8}><Form.Item name="from" label="Dispatch From"><Input /></Form.Item></Col>
-                            <Col span={8}><Form.Item name="to" label="Dispatch To"><Input /></Form.Item></Col>
-                            <Col span={8}><Form.Item name="insuranceCo" label="Insurance Company"><Input /></Form.Item></Col>
-                            <Col span={8}><Form.Item name="policyNumber" label="Policy Number"><Input /></Form.Item></Col>
+                            <Col span={8}><Form.Item name="date" label="Date"><DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" /></Form.Item></Col>
+                            <Col span={16}><Form.Item name="address" label="Billing Address"><Input.TextArea rows={1} /></Form.Item></Col>
+                            <Col span={12}><Form.Item name="deliveryAddress" label="Delivery Address"><Input.TextArea rows={1} /></Form.Item></Col>
+                            <Col span={6}><Form.Item name="placeOfSupply" label="Place of Supply"><Input /></Form.Item></Col>
+                            <Col span={6}><Form.Item name="daNumber" label="DA Number"><Input /></Form.Item></Col>
                         </Row>
 
                         <Title level={5} style={{ marginTop: 20 }}>Vehicles List</Title>
-                        <Table
-                            dataSource={extractedData["VEHICLES"]}
-                            columns={vehicleColumns}
-                            pagination={false}
-                            rowKey={(_, index) => index!}
-                            scroll={{ x: true }}
-                        />
+                        <Table dataSource={extractedData["VEHICLES"]} columns={vehicleColumns} pagination={false} rowKey={(_, index) => index!} scroll={{ x: true }} />
 
                         {!isViewOnly && (
-                            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Button
-                                    icon={<PlusOutlined />}
-                                    onClick={handleAddVehicle}
-                                    style={{ borderColor: '#1a8a7a', color: '#1a8a7a' }}
-                                >
-                                    Add Vehicle
-                                </Button>
-                                <Space size="middle">
-                                    <Button
-                                        type="primary"
-                                        icon={isEditMode ? <EditOutlined /> : <SaveOutlined />}
-                                        loading={loading}
-                                        onClick={handleSave}
-                                        style={{ backgroundColor: '#1a8a7a', borderColor: '#1a8a7a' }}
-                                    >
+                            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between' }}>
+                                <Button icon={<PlusOutlined />} onClick={handleAddVehicle} style={{ borderColor: '#1a8a7a', color: '#1a8a7a' }}>Add Vehicle</Button>
+                                <Space>
+                                    <Button type="primary" icon={isEditMode ? <EditOutlined /> : <SaveOutlined />} loading={loading} onClick={handleSave} style={{ backgroundColor: '#1a8a7a', borderColor: '#1a8a7a' }}>
                                         {isEditMode ? 'Update Record' : 'Save Record'}
                                     </Button>
-                                    <Button
-                                        onClick={handleCancel}
-                                    >
-                                        Cancel
-                                    </Button>
+                                    <Button onClick={handleCancel}>Cancel</Button>
                                 </Space>
                             </div>
                         )}

@@ -6,12 +6,14 @@ import styles from './VehicleInventory.module.css';
 import { getInventorySummary, getInventoryCounts } from '../../api/vehicleInventory';
 import { getDealers as getAllDealers } from '../../api/dealer';
 import VehicleCountModal from './components/VehicleCountModal';
+import { useBranch } from '../../context/BranchContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const VehicleInventory: React.FC = () => {
     const navigate = useNavigate();
+    const { selectedBranchIds } = useBranch();
     const [loading, setLoading] = useState(false);
     const [dealers, setDealers] = useState<any[]>([]);
     const [selectedDealer, setSelectedDealer] = useState<string>('all');
@@ -27,7 +29,7 @@ const VehicleInventory: React.FC = () => {
 
     useEffect(() => {
         fetchData();
-    }, [selectedDealer]);
+    }, [selectedDealer, selectedBranchIds]);
 
     const fetchDealers = async () => {
         try {
@@ -84,6 +86,12 @@ const VehicleInventory: React.FC = () => {
             title: 'Dealer',
             dataIndex: 'dealerName',
             key: 'dealerName',
+            render: (text: string) => <Text style={{ color: '#64748b' }}>{text}</Text>
+        },
+        {
+            title: 'Branch',
+            dataIndex: 'branchName',
+            key: 'branchName',
             render: (text: string) => <Text style={{ color: '#64748b' }}>{text}</Text>
         },
         {

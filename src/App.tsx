@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { BranchProvider } from './context/BranchContext';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Auth/Login';
 import GetStarted from './pages/Auth/GetStarted';
@@ -71,44 +72,46 @@ const RootRedirect: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/yamaha">
-        <Routes>
-          {/* Internal Redirector */}
-          <Route path="/" element={<RootRedirect />} />
+      <BranchProvider>
+        <BrowserRouter basename="/yamaha">
+          <Routes>
+            {/* Internal Redirector */}
+            <Route path="/" element={<RootRedirect />} />
 
-          {/* Public Routes */}
-          <Route path="/get-started" element={<PublicRoute><GetStarted /></PublicRoute>} />
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            {/* Public Routes */}
+            <Route path="/get-started" element={<PublicRoute><GetStarted /></PublicRoute>} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="/company">
-              <Route index element={<CompanySettings />} />
-              <Route path="settings" element={<CompanySettings />} />
-              <Route path="branch" element={<BranchPage />} />
-              <Route path="department" element={<DepartmentPage />} />
-              <Route path="employee" element={<EmployeePage />} />
-              <Route path="manufacturer" element={<ManufacturerPage />} />
-              <Route path="vehicle_master" element={<VehicleMasterPage />} />
-              <Route path="parts_master" element={<PartsMasterPage />} />
-              <Route path="dealer_master" element={<DealerMasterPage />} />
-              <Route path="idgenerator" element={<IdGeneratorPage />} />
-              <Route path="frame_number" element={<FrameNumberPage />} />
-              <Route path="hsn_code" element={<HSNCodePage />} />
-              <Route path="vehicle-stock-inward" element={<VehicleStockInwardPage />} />
-              <Route path="vehicle-stock-inward/import" element={<InwardImportPage />} />
-              <Route path="vehicle-stock-inward/view/:id" element={<InwardImportPage />} />
-              <Route path="vehicle-stock-inward/edit/:id" element={<InwardImportPage />} />
-              <Route path="vehicle-inventory" element={<VehicleInventoryPage />} />
-              <Route path="vehicle-inventory/details" element={<VehicleInventoryDetailPage />} />
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="/company">
+                <Route index element={<CompanySettings />} />
+                <Route path="settings" element={<CompanySettings />} />
+                <Route path="branch" element={<BranchPage />} />
+                <Route path="department" element={<DepartmentPage />} />
+                <Route path="employee" element={<EmployeePage />} />
+                <Route path="manufacturer" element={<ManufacturerPage />} />
+                <Route path="vehicle_master" element={<VehicleMasterPage />} />
+                <Route path="parts_master" element={<PartsMasterPage />} />
+                <Route path="dealer_master" element={<DealerMasterPage />} />
+                <Route path="idgenerator" element={<IdGeneratorPage />} />
+                <Route path="frame_number" element={<FrameNumberPage />} />
+                <Route path="hsn_code" element={<HSNCodePage />} />
+                <Route path="vehicle-stock-inward" element={<VehicleStockInwardPage />} />
+                <Route path="vehicle-stock-inward/import" element={<InwardImportPage />} />
+                <Route path="vehicle-stock-inward/view/:id" element={<InwardImportPage />} />
+                <Route path="vehicle-stock-inward/edit/:id" element={<InwardImportPage />} />
+                <Route path="vehicle-inventory" element={<VehicleInventoryPage />} />
+                <Route path="vehicle-inventory/details" element={<VehicleInventoryDetailPage />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </BranchProvider>
     </AuthProvider>
   );
 };
