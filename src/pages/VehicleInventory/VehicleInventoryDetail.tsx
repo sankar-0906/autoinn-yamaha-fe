@@ -192,15 +192,15 @@ const VehicleInventoryDetail: React.FC = () => {
                                 <div className={styles.fieldValue}>{vehicleInfo?.modelCode} - {vehicleInfo?.modelName}</div>
                             </div>
                             <div className={styles.detailField}>
-                                <div className={styles.fieldLabel}>Dealer Name :</div>
+                                <div className={styles.fieldLabel} >Dealer Name :</div>
                                 <div className={styles.fieldValue}>
                                     <Select
-                                        style={{ width: 200 }}
+                                        style={{ width: 200, padding: '4px' }}
                                         value={dealerFilter}
                                         onChange={setDealerFilter}
                                         size="small"
                                     >
-                                        <Select.Option value="all">ALL DEALERS</Select.Option>
+                                        <Select.Option value="all" style={{ marginLeft: '4px' }}>ALL DEALERS</Select.Option>
                                         {Array.from(new Set(units.map(u => u.lineItem?.inward?.dealer?.id).filter(Boolean))).map(id => {
                                             const dealerName = units.find(u => u.lineItem?.inward?.dealer?.id === id)?.lineItem?.inward?.dealer?.name;
                                             return <Select.Option key={id as string} value={id as string}>{dealerName}</Select.Option>;
