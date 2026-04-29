@@ -233,7 +233,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
             centered
             bodyStyle={{ padding: '24px', maxHeight: '80vh', overflowY: 'auto' }}
         >
-            <Form form={form} layout="vertical">
+            <Form form={form} layout="vertical" autoComplete="off">
                 <Row gutter={24}>
                     <Col span={12}>
                         <Form.Item name="name" label={<span className={styles.formLabel}>Dealer Name</span>} rules={[{ required: true }]}>
@@ -314,7 +314,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                             label={<span className={styles.formLabel}>Email</span>}
                             rules={[{ type: 'email', message: 'Enter a valid email address' }]}
                         >
-                            <Input placeholder="Enter Email" disabled={readOnly} />
+                            <Input placeholder="Enter Email" disabled={readOnly} autoComplete="off" />
                         </Form.Item>
                     </Col>
                     <Col span={12}>
@@ -322,7 +322,7 @@ const DealerMasterModal: React.FC<DealerMasterModalProps> = ({ open, onClose, on
                             name="password"
                             label={<span className={styles.formLabel}>Password</span>}
                         >
-                            <Input.Password placeholder="Enter Password" disabled={readOnly} />
+                            <Input.Password placeholder="Enter Password" disabled={readOnly} autoComplete="new-password" />
                         </Form.Item>
                     </Col>
                 </Row>
