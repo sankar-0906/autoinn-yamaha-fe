@@ -114,7 +114,7 @@ const InwardImportPage: React.FC = () => {
             try {
                 const [modelsRes, dealersRes, branchesRes] = await Promise.all([
                     getUniqueModels(),
-                    getDealers({ limit: 1000 }),
+                    getDealers({ limit: 1000, status: 'Active' }),
                     getBranches({ page: 1, size: 1000 })
                 ]);
                 setAvailableModels(modelsRes.data || []);
